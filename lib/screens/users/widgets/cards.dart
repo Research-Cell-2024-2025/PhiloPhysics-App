@@ -1,0 +1,199 @@
+import 'package:ephysicsapp/globals/colors.dart';
+import 'package:ephysicsapp/screens/Admin/docMaster.dart';
+import 'package:ephysicsapp/screens/Admin/videosPage.dart';
+import 'package:ephysicsapp/services/docServices.dart';
+import 'package:flutter/material.dart';
+
+Widget moduleUserCard({
+  required int index,
+  required Map<dynamic, dynamic> moduleDetails,
+  required String section,
+  required BuildContext context,
+}) {
+  final String moduleName = moduleDetails['moduleName'] ?? 'Unknown';
+  final String moduleId = moduleDetails['moduleId'] ?? 'Unknown';
+  final int moduleNo = moduleDetails['moduleNo'] ?? 'Unknown';
+
+  return Container(
+    margin: EdgeInsets.fromLTRB(10, 7, 10, 7),
+    child: Card(
+      elevation: 3,
+      color: color1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(100)),
+      ),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
+        leading: Container(
+          padding: EdgeInsets.only(right: 12.0),
+          decoration: BoxDecoration(
+            border: Border(right: BorderSide(width: 1.0, color: color5)),
+          ),
+          child: Text(
+            moduleNo.toString(),
+            style: TextStyle(fontSize: 18),
+          ),
+        ),
+        title: Text(
+          moduleName,
+          overflow: TextOverflow.visible,
+          style: TextStyle(
+            color: color5,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        trailing: Icon(Icons.keyboard_arrow_right, color: color5, size: 30.0),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DocMaster(
+                section: section,
+                moduleName: moduleName,
+                moduleID: moduleId,
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+  );
+}
+
+
+Widget docUserCard({
+  int? index,
+  Map? docDetails,
+  String? section,
+  String? moduleID,
+  BuildContext? context,}) {
+  return Container(
+      margin: EdgeInsets.fromLTRB(10, 7, 10, 7),
+       child:Card(
+        elevation: 3,
+        color:  color1,
+          shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.horizontal(right: Radius.circular(100)),
+    ),
+      child: ListTile(
+      
+        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+        leading: Container(
+          padding: EdgeInsets.only(right: 12.0),
+          decoration: new BoxDecoration(
+              border:
+                  new Border(right: new BorderSide(width: 1.0, color: color5))),
+          child: Icon(Icons.note, color: color5),
+        ),
+        title: Text(
+          docDetails!["docName"].toString(),
+           overflow: TextOverflow.visible,
+          style: TextStyle(
+            color: color5,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        trailing: Icon(Icons.keyboard_arrow_right, color: color5, size: 30.0),
+        onTap: () {
+          print(docDetails);
+          openFile(docDetails["downloadUrl"], context!,docDetails["docName"]);
+            //openDocProgressIndicator( context, docDetails["downloadUrl"]);// didnt work
+        },
+      )));
+}
+
+
+// widget video card
+
+Widget videosCard({
+  required String? section,
+  required String? moduleID,
+  required BuildContext? context}) {
+  return Padding(
+    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    child: Card(
+      elevation: 3,
+      color: color2,
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+        leading: Container(
+          padding: EdgeInsets.only(right: 12.0),
+          decoration: BoxDecoration(
+              border: Border(right: BorderSide(width: 1.0, color: color5))),
+          child: Icon(Icons.video_library, color: color5),
+        ),
+        title: Text(
+          'Videos',
+          overflow: TextOverflow.visible,
+          style: TextStyle(
+            color: color5,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        trailing: Icon(Icons.keyboard_arrow_right, color: color5, size: 30.0),
+        onTap: () {
+          Navigator.push(
+            context!,
+            MaterialPageRoute(
+              builder: (context) => VideosListPage(
+                section: section!,
+                moduleID: moduleID!,
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+  );
+}
+
+Widget videosUserCard({
+  required String? section,
+  required String? moduleID,
+  required BuildContext? context}) {
+  return Padding(
+    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    child: Card(
+      elevation: 3,
+      color: color1,
+      shadowColor: Colors.grey,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(100)),
+      ),
+      child: ListTile(
+
+        contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+        leading: Container(
+          padding: EdgeInsets.only(right: 12.0),
+          decoration: BoxDecoration(
+              border: Border(right: BorderSide(width: 1.0, color: color5))),
+          child: Icon(Icons.video_library, color: color5),
+        ),
+        title: Text(
+          'Videos',
+          overflow: TextOverflow.visible,
+          style: TextStyle(
+            color: color5,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        trailing: Icon(Icons.keyboard_arrow_right, color: color5, size: 30.0),
+        onTap: () {
+          Navigator.push(
+            context!,
+            MaterialPageRoute(
+              builder: (context) => VideosListPage(
+                section: section!,
+                moduleID: moduleID!,
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+  );
+}
