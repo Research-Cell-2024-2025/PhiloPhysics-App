@@ -29,14 +29,12 @@ class _DocMasterState extends State<DocMaster> {
       FirebaseDatabase.instance; // Shorten for readability
   List documents = [];
 
-
-
   @override
   void initState() {
-    // TODO: implement initState
     print(widget.moduleName);
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,7 +63,6 @@ class _DocMasterState extends State<DocMaster> {
                     }
                     documents = sortMap(data!, "docName").values.toList();
 
-
                     return ListView.builder(
                       shrinkWrap: true,
                       physics: NeverScrollableScrollPhysics(),
@@ -73,19 +70,19 @@ class _DocMasterState extends State<DocMaster> {
                       itemBuilder: (context, index) {
                         return isLoggedIn()
                             ? docCard(
-                          index: index,
-                          docDetails: documents[index],
-                          context: context,
-                          section: widget.section,
-                          moduleID: widget.moduleID,
-                        )
+                                index: index,
+                                docDetails: documents[index],
+                                context: context,
+                                section: widget.section,
+                                moduleID: widget.moduleID,
+                              )
                             : docUserCard(
-                          index: index,
-                          docDetails: documents[index],
-                          context: context,
-                          section: widget.section,
-                          moduleID: widget.moduleID,
-                        );
+                                index: index,
+                                docDetails: documents[index],
+                                context: context,
+                                section: widget.section,
+                                moduleID: widget.moduleID,
+                              );
                       },
                     );
                   } else if (!snap.hasError && dataSnapshot.value == null) {
@@ -100,66 +97,66 @@ class _DocMasterState extends State<DocMaster> {
             ),
             (widget.moduleName != "copyright-certificate")
                 ? (isLoggedIn()
-                ? videosCard(
-              context: context,
-              moduleID: widget.moduleID,
-              section: widget.section,
-            )
-                : videosUserCard(
-              context: context,
-              moduleID: widget.moduleID,
-              section: widget.section,
-            ))
-                : Container(),  // Or any other widget you want to display when moduleName is "copyright-certificate"
+                    ? videosCard(
+                        context: context,
+                        moduleID: widget.moduleID,
+                        section: widget.section,
+                      )
+                    : videosUserCard(
+                        context: context,
+                        moduleID: widget.moduleID,
+                        section: widget.section,
+                      ))
+                : Container(), // Or any other widget you want to display when moduleName is "copyright-certificate"
           ],
         ),
       ),
       floatingActionButton: isLoggedIn()
           ? Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: FloatingActionButton(
-              heroTag: 'videoHero',
-              backgroundColor: color4,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddVideo(
-                      section: widget.section,
-                      moduleID: widget.moduleID,
-                    ),
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: FloatingActionButton(
+                    heroTag: 'videoHero',
+                    backgroundColor: color4,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddVideo(
+                            section: widget.section,
+                            moduleID: widget.moduleID,
+                          ),
+                        ),
+                      );
+                    },
+                    tooltip: 'Add Video',
+                    child: Icon(Icons.video_collection_outlined),
                   ),
-                );
-              },
-              tooltip: 'Add Video',
-              child: Icon(Icons.video_collection_outlined),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: FloatingActionButton(
-              heroTag: 'documentHero',
-              backgroundColor: color4,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddDoc(
-                      section: widget.section,
-                      moduleID: widget.moduleID,
-                    ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: FloatingActionButton(
+                    heroTag: 'documentHero',
+                    backgroundColor: color4,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddDoc(
+                            section: widget.section,
+                            moduleID: widget.moduleID,
+                          ),
+                        ),
+                      );
+                    },
+                    tooltip: 'Add Document',
+                    child: Icon(Icons.add),
                   ),
-                );
-              },
-              tooltip: 'Add Document',
-              child: Icon(Icons.add),
-            ),
-          ),
-        ],
-      )
+                ),
+              ],
+            )
           : Container(),
     );
   }
