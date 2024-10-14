@@ -295,6 +295,7 @@ class _AdminStatisticsState extends State<AdminAppUsageStatistics> {
         setState(() {
           availableYears = yearlyUsage.keys.toList()..sort();
           isLoading = false;
+          print(availableYears);
         });
       } else {
         setState(() {
@@ -399,13 +400,11 @@ class _AdminStatisticsState extends State<AdminAppUsageStatistics> {
         title: const Text(
           'Admin Statistics',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Colors.black,
           ),
         ),
-        centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.white,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -581,7 +580,7 @@ class _AdminStatisticsState extends State<AdminAppUsageStatistics> {
                                     onPressed: switchToPreviousPage,
                                     icon: const Icon(
                                       Icons.arrow_back_ios,
-                                      color: Colors.blueAccent,
+                                      color: Colors.black,
                                     ),
                                   ),
                                 ),
@@ -591,7 +590,7 @@ class _AdminStatisticsState extends State<AdminAppUsageStatistics> {
                                     onPressed: switchToNextPage,
                                     icon: Icon(
                                       Icons.arrow_forward_ios,
-                                      color: Colors.blueAccent,
+                                      color: Colors.black,
                                     ),
                                   ),
                                 ),

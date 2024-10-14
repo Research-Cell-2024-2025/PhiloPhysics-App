@@ -268,14 +268,14 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
     print("Playing video");
     print(widget.videoDetails);
     controller = PodPlayerController(
-      playVideoFrom: PlayVideoFrom.youtube(widget.videoDetails["videoDownloadUrl"]),
-      podPlayerConfig: PodPlayerConfig(
-        autoPlay: true,
-        forcedVideoFocus: true,
-        isLooping: true,
-        wakelockEnabled: true,
-        videoQualityPriority: [720,360],
-      )
+        playVideoFrom: PlayVideoFrom.youtube(widget.videoDetails["videoDownloadUrl"]),
+        podPlayerConfig: PodPlayerConfig(
+          autoPlay: true,
+          forcedVideoFocus: true,
+          isLooping: true,
+          wakelockEnabled: true,
+          videoQualityPriority: [720,360],
+        )
     )..initialise();
     super.initState();
   }
@@ -297,7 +297,7 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
       ),
       body: Center(
         child: PodVideoPlayer(
-            controller: controller,
+          controller: controller,
           videoThumbnail:  DecorationImage(
             image: NetworkImage(widget.videoDetails['thumbnailDownloadUrl']),
             fit: BoxFit.cover,
@@ -307,4 +307,3 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
     );
   }
 }
-

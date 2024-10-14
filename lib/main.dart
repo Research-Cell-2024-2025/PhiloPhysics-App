@@ -45,6 +45,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   // Method triggered when user logs in
   Future<void> onUserLogin(String userId) async {
+    print("Started Recording time on login");
     _isLoggedIn = true;
     _userId = userId;
     _startTime = DateTime.now(); // Start time tracking
@@ -98,6 +99,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     totalUsage += sessionDuration;
     String formattedUsage = _formatDuration(totalUsage);
     await userUsageRef.set(formattedUsage);
+    print(formattedUsage);
   }
 
   Duration _parseDuration(String durationStr) {

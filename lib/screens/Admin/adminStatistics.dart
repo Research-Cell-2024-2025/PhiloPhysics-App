@@ -29,14 +29,14 @@ class _AdminStatisticsState extends State<AdminStatistics> {
 
     try {
       DataSnapshot snapshot =
-          await dbRef.once().then((event) => event.snapshot);
+      await dbRef.once().then((event) => event.snapshot);
 
       if (snapshot.exists) {
         Set<String> uniqueColleges = HashSet<String>();
 
         snapshot.children.forEach((userSnapshot) {
           Map<dynamic, dynamic> userData =
-              userSnapshot.value as Map<dynamic, dynamic>;
+          userSnapshot.value as Map<dynamic, dynamic>;
 
           if (userData.containsKey('pdfsViewed')) {
             totalPdfsViewed += (userData['pdfsViewed'] as num)
@@ -79,66 +79,81 @@ class _AdminStatisticsState extends State<AdminStatistics> {
       ),
       body: isLoading
           ? const Center(
-              child:
-                  CircularProgressIndicator(), // Show loading indicator while data is fetched
-            )
+        child:
+        CircularProgressIndicator(), // Show loading indicator while data is fetched
+      )
           : Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 25.0, vertical: 20.0),
-                child: GridView.count(
-                  crossAxisCount: 2, // 2 boxes per row
-                  crossAxisSpacing: 20.0,
-                  mainAxisSpacing: 20.0,
-                  childAspectRatio:
-                      1.2, // Aspect ratio to control the height/width ratio of the boxes
-                  children: [
-                    _buildStatBox(
-                        Icons.people,
-                        'Total Users',
-                        userCount.toString(),
-                        Colors.blue,
-                        context,
-                        'TotalUsersPage'),
-                    _buildStatBox(
-                        Icons.picture_as_pdf,
-                        'PDFs Viewed',
-                        totalPdfsViewed.toString(),
-                        Colors.green,
-                        context,
-                        'PdfsViewedPage'),
-                    _buildStatBox(
-                        Icons.video_library,
-                        'Videos Viewed',
-                        totalVideosViewed.toString(),
-                        Colors.orange,
-                        context,
-                        'VideosViewedPage'),
-                    _buildStatBox(
-                        Icons.school,
-                        'Unique Colleges',
-                        uniqueCollegesCount.toString(),
-                        Colors.red,
-                        context,
-                        'UniqueCollegesPage'),
-                  ],
-                ),
-              ),
-            ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: 25.0, vertical: 20.0),
+          child: GridView.count(
+            crossAxisCount: 2,
+            // 2 boxes per row
+            crossAxisSpacing: 20.0,
+            mainAxisSpacing: 20.0,
+            childAspectRatio:
+            1.2,
+            // Aspect ratio to control the height/width ratio of the boxes
+            children: [
+              _buildStatBox(
+                  Icons.people,
+                  'Total Users',
+                  userCount.toString(),
+                  Colors.blue,
+                  context,
+                AdminAppUsageStatistics()), // Only the first box navigates
+              _buildStatBox(
+                  Icons.picture_as_pdf,
+                  'PDFs Viewed',
+                  totalPdfsViewed.toString(),
+                  Colors.green,
+                  context,
+                  null), // No navigation for this box yet
+              _buildStatBox(
+                  Icons.video_library,
+                  'Videos Viewed',
+                  totalVideosViewed.toString(),
+                  Colors.orange,
+                  context,
+                  null), // No navigation for this box yet
+              _buildStatBox(
+                  Icons.school,
+                  'Unique Colleges',
+                  uniqueCollegesCount.toString(),
+                  Colors.red,
+                  context,
+                  null), // No navigation for this box yet
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildStatBox(IconData icon, String label, String value, Color color,
-      BuildContext context, String route) {
+  Widget _buildStatBox(IconData icon,
+      String label,
+      String value,
+      Color color,
+      BuildContext context,
+      Widget? pageToNavigate,
+      // Accepts a widget for navigation, or null if no navigation
+      ) {
     bool isTapped = false;
 
     return GestureDetector(
-      onTapDown: (_) => setState(() => isTapped = true), // Detect touch
-      onTapUp: (_) => setState(() => isTapped = false), // Detect release
-      onTapCancel: () => setState(() => isTapped = false), // Handle tap cancel
+      onTapDown: (_) => setState(() => isTapped = true),
+      // Detect touch
+      onTapUp: (_) => setState(() => isTapped = false),
+      // Detect release
+      onTapCancel: () => setState(() => isTapped = false),
+      // Handle tap cancel
       onTap: () {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => AdminAppUsageStatistics()));
+        if (pageToNavigate != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => pageToNavigate),
+          );
+        }
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
@@ -162,7 +177,10 @@ class _AdminStatisticsState extends State<AdminStatistics> {
           children: [
             Icon(
               icon,
-              size: MediaQuery.of(context).size.width / 10,
+              size: MediaQuery
+                  .of(context)
+                  .size
+                  .width / 10,
               color: color,
             ),
             const SizedBox(height: 10),
