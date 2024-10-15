@@ -43,8 +43,7 @@ dependencies:
   bottom_navy_bar: ^6.0.0
   flutter_easyloading: ^3.0.5
   modal_progress_hud_nsn: ^0.5.1
-  flutter_inappwebview: ^6.0.0
-  youtube_player_flutter: ^9.1.1
+  flutter_inappwebview: ^5.7.2+3
   webview_flutter: ^4.8.0
   pod_player: ^0.2.2
   material_segmented_control: ^5.0.1
@@ -56,6 +55,7 @@ dependencies:
   carousel_slider: ^5.0.0
   fl_chart: ^0.69.0
   smooth_page_indicator: ^1.2.0+3
+  youtube_player_flutter: ^8.1.2
 
 dev_dependencies:
   flutter_test:

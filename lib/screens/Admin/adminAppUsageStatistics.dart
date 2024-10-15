@@ -606,7 +606,7 @@ class _AdminStatisticsState extends State<AdminAppUsageStatistics> {
                                 dotHeight: 8.0,
                                 dotWidth: 8.0,
                                 activeDotColor: Colors.blueAccent,
-                                dotColor: Colors.grey.withOpacity(0.5),
+                                dotColor: Colors.white,
                                 expansionFactor: 4,
                               ),
                             ),
