@@ -1,17 +1,23 @@
 import 'package:ephysicsapp/screens/users/home.dart';
 import 'package:ephysicsapp/services/authentication.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:intl/intl.dart'; // For DateFormat
-import 'globals/colors.dart'; // Assuming colors are defined in this file
+import 'package:intl/intl.dart';
+import 'globals/colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await initializePreferences();
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.playIntegrity,
+   // appleProvider: AppleProvider.appAttest,
+  );
   runApp(MyApp());
 }
 
@@ -29,6 +35,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    checkForUpdate();
     _checkLoggedInStatus();
   }
 
@@ -43,7 +50,23 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
-  // Method triggered when user logs in
+  // Check for updates
+  void checkForUpdate() async {
+    try {
+      print("App Version check been performed");
+      final AppUpdateInfo updateInfo = await InAppUpdate.checkForUpdate();
+      if (updateInfo.updateAvailability == UpdateAvailability.updateAvailable) {
+        print("Update found");
+        // Start the immediate update process
+        await InAppUpdate.performImmediateUpdate();
+      }
+      print("No Update found");
+      print(updateInfo);
+    } catch (e) {
+      print("Error checking for updates: $e");
+    }
+  }
+
   Future<void> onUserLogin(String userId) async {
     print("Started Recording time on login");
     _isLoggedIn = true;
@@ -60,15 +83,16 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
-  // Track app lifecycle to start/stop recording usage
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_isLoggedIn) {
       if (state == AppLifecycleState.resumed) {
-        // App brought to foreground
+        // App brought to foreground i.e in use
+        print('Starting Time Recording');
         _startTime = DateTime.now();
       } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-        // App goes to background, log usage time
+        print("App Not in Foreground");
         _logAppUsageTime();
       }
     }
@@ -99,7 +123,8 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     totalUsage += sessionDuration;
     String formattedUsage = _formatDuration(totalUsage);
     await userUsageRef.set(formattedUsage);
-    print(formattedUsage);
+    print("Formated Usage : $formattedUsage");
+    print("Total Usage $totalUsage");
   }
 
   Duration _parseDuration(String durationStr) {

@@ -92,6 +92,8 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
   TextEditingController passwordController = TextEditingController();
   final GlobalKey<FormState> _formKeyValue = new GlobalKey<FormState>();
 
+  bool _isPasswordVisible = false;
+
   checkValidation() {
     if (_formKeyValue.currentState!.validate()) {
       login(emailController.text, passwordController.text, context);
@@ -140,9 +142,27 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
                 if (value!.isEmpty) return "Enter Password";
                 return null;
               },
-              obscureText: true,
+              obscureText: !_isPasswordVisible,
               decoration: InputDecoration(
                 labelText: "Enter Password",
+                suffixIcon: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min, // Use min to avoid extra width
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          _isPasswordVisible ? Icons.visibility_off : Icons.visibility ,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible; // Toggle visibility
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                 focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(width: 2.0),
                 ),

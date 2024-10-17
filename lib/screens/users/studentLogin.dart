@@ -1,6 +1,7 @@
 import 'package:ephysicsapp/globals/colors.dart';
 import 'package:ephysicsapp/screens/users/studentRegistration.dart';
 import 'package:ephysicsapp/services/authentication.dart';
+import 'package:ephysicsapp/widgets/popUps.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,6 +17,10 @@ class _StudentLoginState extends State<StudentLogin> {
   final GlobalKey<FormState> _formKeyValue = GlobalKey<FormState>();
   TextEditingController studentemailController = TextEditingController();
   TextEditingController studentpasswordController = TextEditingController();
+
+  bool _isPasswordVisible = false;
+  bool _isLoading = false; // State to manage loading
+
 
   // Function to reset password
   Future<void> resetPassword(String email) async {
@@ -33,8 +38,35 @@ class _StudentLoginState extends State<StudentLogin> {
 
   checkValidation() {
     if (_formKeyValue.currentState!.validate()) {
-      studentLogin(studentemailController.text, studentpasswordController.text, context);
+      setState(() {
+        _isLoading = true; // Set loading state to true
+      });
+
+      studentLogin(studentemailController.text, studentpasswordController.text, context).then((_) {
+        setState(() {
+          _isLoading = false; // Set loading state to false
+        });
+      }).catchError((error) {
+        setState(() {
+          _isLoading = false; // Set loading state to false
+        });
+        // Handle login error (e.g., show error message)
+        showToast("Login failed: $error");
+      });
     }
+  }
+
+  void _showLoadingIndicator() {
+    print('Loading start');
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent dismissing by tapping outside
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(backgroundColor: Colors.transparent),
+        );
+      },
+    );
   }
 
   @override
@@ -79,8 +111,25 @@ class _StudentLoginState extends State<StudentLogin> {
                   if (value!.isEmpty) return "Enter Password";
                   return null;
                 },
-                obscureText: true,
-                decoration: InputDecoration(
+                obscureText: !_isPasswordVisible,
+                decoration: InputDecoration( suffixIcon: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min, // Use min to avoid extra width
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          _isPasswordVisible ? Icons.visibility_off : Icons.visibility ,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible; // Toggle visibility
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                   labelText: "Enter Password",
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(width: 2.0),
@@ -93,10 +142,14 @@ class _StudentLoginState extends State<StudentLogin> {
                   padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30),
                   backgroundColor: color5,
                 ),
-                onPressed: () {
+                onPressed: _isLoading ? null : () { // Disable button if loading
                   checkValidation();
                 },
-                child: Text(
+                child: _isLoading
+                    ? CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation(color1), // Use your desired color
+                )
+                    : Text(
                   'Login',
                   style: TextStyle(fontSize: 18, color: color1),
                 ),

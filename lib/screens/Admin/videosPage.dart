@@ -584,6 +584,7 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
       initialVideoId: widget.videoId,
       flags: YoutubePlayerFlags(
         autoPlay: true,
+        hideControls: false,
         mute: false,
       ),
     );
@@ -595,6 +596,10 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
       player: YoutubePlayer(
         controller: _controller,
         showVideoProgressIndicator: true,
+        onEnded: (metaData) {
+          _controller.seekTo(Duration.zero);
+          _controller.pause();
+        },
         progressIndicatorColor: Colors.blueAccent,
         progressColors: ProgressBarColors(
           playedColor: Colors.blue,

@@ -37,6 +37,9 @@ class _StudentRegisterState extends State<StudentRegister> {
   String _selectedCollege = 'Sakec';
   bool _isOtherCollegeSelected = false;
 
+  bool _isPasswordVisible = false; // Track password visibility
+  bool _isConfPasswordVisible = false;
+
   void checkValidation() {
     if (!_formKeyValue.currentState!.validate()) {
       showToast("Please fill all the fields correctly");
@@ -57,7 +60,6 @@ class _StudentRegisterState extends State<StudentRegister> {
         ? 'Sakec'
         : otherCollegeNameController.text;
 
-    // Call the registration method with the appropriate values
     Studentregister(
       studentAccCreationemailController.text,
       studentAccCreationnameController.text,
@@ -78,6 +80,7 @@ class _StudentRegisterState extends State<StudentRegister> {
       });
     });
   }
+
 
   void checkPasswordStrength(String password) {
     setState(() {
@@ -100,6 +103,20 @@ class _StudentRegisterState extends State<StudentRegister> {
     return Icon(
       criteria ? Icons.check_circle : Icons.cancel,
       color: criteria ? Colors.green : Colors.red,
+    );
+  }
+
+  Widget buildPasswordCheckConditions() {
+    if(hasUppercase == true && hasMinLength == true && hasNumber == true && hasSpecialChar == true)
+      {
+        return Icon(
+          Icons.check_circle,
+          color: Colors.green,
+        );
+      }
+    return Icon(
+      Icons.cancel,
+      color: Colors.red,
     );
   }
 
@@ -262,12 +279,33 @@ class _StudentRegisterState extends State<StudentRegister> {
                   onChanged: (value) {
                     checkPasswordStrength(value); // Real-time check
                   },
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
+                  obscureText: !_isPasswordVisible,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
                     labelText: "Enter Password",
-                    focusedBorder: OutlineInputBorder(
+                    focusedBorder: const OutlineInputBorder(
                       borderSide: BorderSide(width: 2.0),
+                    ),
+                    hintText: 'Enter your password',
+                    // Adjusting the suffix icon for consistent height
+                    suffixIcon: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min, // Use min to avoid extra width
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible; // Toggle visibility
+                              });
+                            },
+                          ),
+                          buildPasswordCheckConditions(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -311,11 +349,29 @@ class _StudentRegisterState extends State<StudentRegister> {
                     if (value!.isEmpty) return "Enter Confirm Password";
                     return null;
                   },
-                  obscureText: true,
+                  obscureText: !_isConfPasswordVisible,
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
                     border: OutlineInputBorder(),
-                    suffixIcon: buildPasswordCriteriaIcon(isPasswordMatching),
+                    suffixIcon: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min, // Use min to avoid extra width
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              _isConfPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isConfPasswordVisible = !_isConfPasswordVisible; // Toggle visibility
+                              });
+                            },
+                          ),
+                          buildPasswordCriteriaIcon(isPasswordMatching),
+                        ],
+                      ),
+                    ),
                   ),
                   onChanged: (value) {
                     checkPasswordMatch(value);

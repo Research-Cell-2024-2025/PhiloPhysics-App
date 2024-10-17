@@ -18,28 +18,64 @@ login(String email, String password, BuildContext context) async {
   try {
     FirebaseAuth _auth = FirebaseAuth.instance;
 
+    // Attempt to sign in with email and password
     UserCredential result = await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     ).catchError((e) {
-      showToast(e.toString());
+      Fluttertoast.showToast(msg: "Invalid Credentials", timeInSecForIosWeb: 4);
     });
 
     if (result != null) {
-      prefs.setBool("isLogged", true);  // Mark as admin logged in
-      Fluttertoast.showToast(msg: "Logged In as: $email", timeInSecForIosWeb: 4);
+      print("User Exists");
+      String role = '';
+      String userId = result.user!.uid;
+      DatabaseReference dbRef = FirebaseDatabase.instance.ref();
 
-      // Use Navigator.pushAndRemoveUntil to remove all previous routes
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => MyHomePage()),
-            (Route<dynamic> route) => false, // Remove all previous routes
-      );
+      // Fetch user data from 'Users' document
+      DataSnapshot snapshot = (await dbRef.child('Users').child(userId).once()).snapshot;
+
+      if (snapshot.exists) {
+        // Get user role if the user exists
+        Map<dynamic, dynamic> userData = snapshot.value as Map<dynamic, dynamic>;
+        role = userData['role'] ?? '';
+      }
+
+      // Check if the role is not 'Student' or user data does not exist
+      if (role != 'Student' || !snapshot.exists) {
+        // Log in as an admin
+        prefs.setBool("isLogged", true);  // Mark as admin logged in
+        Fluttertoast.showToast(
+          msg: "Logged In as: $email",
+          fontSize: 14,
+          timeInSecForIosWeb: 4,
+          toastLength: Toast.LENGTH_LONG,
+        );
+
+        // Navigate to the home page and remove all previous routes
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => MyHomePage()),
+              (Route<dynamic> route) => false, // Remove all previous routes
+        );
+      } else {
+        // Show toast if the user is a 'Student'
+        Fluttertoast.showToast(
+          msg: "Cannot log in as Admin. User is a Student.",
+          fontSize: 14,
+          timeInSecForIosWeb: 4,
+          toastLength: Toast.LENGTH_LONG,
+        );
+
+        // Sign out the user
+        await _auth.signOut();
+      }
     }
   } catch (e) {
-    // Handle the error here
+    print('Error: $e');
   }
 }
+
 
 
 // Student registration method
@@ -67,25 +103,27 @@ Studentregister(String email, String name, String classdiv, String password,Stri
       });
 
       // Show a success message
-      showToast("User Registered Successfully");
+      Fluttertoast.showToast(msg: "User Account Created Successfully",timeInSecForIosWeb: 4);
       Navigator.pop(context);
     }
   } catch (e) {
     // Handle registration errors
-    showToast(e.toString());
+    print(e.toString());
   }
 }
 
 // Student login method
 Future<void> studentLogin(String email, String password, BuildContext context) async {
   try {
+    print("student login begins");
     FirebaseAuth _auth = FirebaseAuth.instance;
 
+    // Attempt to log in with email and password
     UserCredential result = await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     ).catchError((e) {
-      showToast(e.toString());
+      print("Firebase Auth Error: ${e.toString()}"); // Log Firebase Auth errors
     });
 
     if (result != null) {
@@ -99,34 +137,37 @@ Future<void> studentLogin(String email, String password, BuildContext context) a
         String role = userData['role'];
 
         if (role == 'Student') {
-          // Store student UUID and set logged in state
+          print('Role is Student');
           prefs.setString('studentUUID', userId); // Store student UUID
           prefs.setBool('isStudentLoggedIn', true); // Mark as student logged in
 
           showToast("Logged In as Student: $email");
           print("Logged In as Student: $email");
-          print("Islogged first time usage track run:");
+
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => MyHomePage()),
+          );
+
           final myAppState = context.findAncestorStateOfType<MyAppState>();
           if (myAppState != null) {
             myAppState.onUserLogin(userId); // Call onUserLogin when user logs in
           }
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => MyHomePage()),
-                (Route<dynamic> route) => false, // Remove all previous routes
-          );
+
+
         } else {
           showToast("You are not authorized to log in as a student.");
         }
       } else {
-        showToast("No student found with this account.");
+        print("Not Student");
+        Fluttertoast.showToast(msg :"You are not authorized to log in as a student.");
       }
     }
   } catch (e) {
-    //showToast(e.toString());
-    print(e.toString());
+    print("Error in studentLogin: ${e.toString()}");
+    Fluttertoast.showToast(msg: "Incorrect Credentials !",timeInSecForIosWeb: 4);
   }
 }
+
 
 // Logout method
 Future<void> onLogout(BuildContext context) async {

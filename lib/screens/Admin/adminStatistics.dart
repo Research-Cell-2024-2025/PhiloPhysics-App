@@ -39,12 +39,10 @@ class _AdminStatisticsState extends State<AdminStatistics> {
           userSnapshot.value as Map<dynamic, dynamic>;
 
           if (userData.containsKey('pdfsViewed')) {
-            totalPdfsViewed += (userData['pdfsViewed'] as num)
-                .toInt(); // Cast to num and then to int
+            totalPdfsViewed += (userData['pdfsViewed'] as num).toInt();
           }
           if (userData.containsKey('videosViewed')) {
-            totalVideosViewed += (userData['videosViewed'] as num)
-                .toInt(); // Cast to num and then to int
+            totalVideosViewed += (userData['videosViewed'] as num).toInt();
           }
 
           if (userData.containsKey('college')) {
@@ -79,50 +77,45 @@ class _AdminStatisticsState extends State<AdminStatistics> {
       ),
       body: isLoading
           ? const Center(
-        child:
-        CircularProgressIndicator(), // Show loading indicator while data is fetched
+        child: CircularProgressIndicator(),
       )
           : Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 25.0, vertical: 20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 20.0),
           child: GridView.count(
             crossAxisCount: 2,
-            // 2 boxes per row
             crossAxisSpacing: 20.0,
             mainAxisSpacing: 20.0,
-            childAspectRatio:
-            1.2,
-            // Aspect ratio to control the height/width ratio of the boxes
+            childAspectRatio: 1.125,
             children: [
               _buildStatBox(
                   Icons.people,
                   'Total Users',
                   userCount.toString(),
-                  Colors.blue,
+                  const Color(0xFF4A90E2), // Blue Gradient
                   context,
-                AdminAppUsageStatistics()), // Only the first box navigates
+                  AdminAppUsageStatistics()),
               _buildStatBox(
                   Icons.picture_as_pdf,
                   'PDFs Viewed',
                   totalPdfsViewed.toString(),
-                  Colors.green,
+                  const Color(0xFF50E3C2), // Green Gradient
                   context,
-                  null), // No navigation for this box yet
+                  null),
               _buildStatBox(
                   Icons.video_library,
                   'Videos Viewed',
                   totalVideosViewed.toString(),
-                  Colors.orange,
+                  const Color(0xFFF5A623), // Orange Gradient
                   context,
-                  null), // No navigation for this box yet
+                  null),
               _buildStatBox(
                   Icons.school,
                   'Unique Colleges',
                   uniqueCollegesCount.toString(),
-                  Colors.red,
+                  const Color(0xFFD0021B), // Red Gradient
                   context,
-                  null), // No navigation for this box yet
+                  null),
             ],
           ),
         ),
@@ -130,23 +123,14 @@ class _AdminStatisticsState extends State<AdminStatistics> {
     );
   }
 
-  Widget _buildStatBox(IconData icon,
-      String label,
-      String value,
-      Color color,
-      BuildContext context,
-      Widget? pageToNavigate,
-      // Accepts a widget for navigation, or null if no navigation
-      ) {
+  Widget _buildStatBox(IconData icon, String label, String value, Color color,
+      BuildContext context, Widget? pageToNavigate) {
     bool isTapped = false;
 
     return GestureDetector(
       onTapDown: (_) => setState(() => isTapped = true),
-      // Detect touch
       onTapUp: (_) => setState(() => isTapped = false),
-      // Detect release
       onTapCancel: () => setState(() => isTapped = false),
-      // Handle tap cancel
       onTap: () {
         if (pageToNavigate != null) {
           Navigator.push(
@@ -157,18 +141,20 @@ class _AdminStatisticsState extends State<AdminStatistics> {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        transform: Matrix4.identity()
-          ..scale(isTapped ? 0.95 : 1.0), // Scale on touch
+        transform: Matrix4.identity()..scale(isTapped ? 0.98 : 1.0),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color, width: 2), // Adding border
+          gradient: LinearGradient(
+            colors: [color.withOpacity(0.7), color],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.5),
+              color: color.withOpacity(0.4),
               spreadRadius: 2,
-              blurRadius: 5,
-              offset: const Offset(0, 3), // changes position of shadow
+              blurRadius: 10,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -177,28 +163,25 @@ class _AdminStatisticsState extends State<AdminStatistics> {
           children: [
             Icon(
               icon,
-              size: MediaQuery
-                  .of(context)
-                  .size
-                  .width / 10,
-              color: color,
+              size: MediaQuery.of(context).size.width / 8,
+              color: Colors.white,
             ),
             const SizedBox(height: 10),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 5),
             Text(
-              value, // Display the dynamic value here
-              style: TextStyle(
-                fontSize: 24,
+              value,
+              style: const TextStyle(
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: color,
+                color: Colors.white,
               ),
             ),
           ],
