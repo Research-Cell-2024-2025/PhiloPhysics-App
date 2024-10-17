@@ -15,7 +15,7 @@ class AdminLogin extends StatefulWidget {
 }
 
 class _AdminLoginState extends State<AdminLogin> {
-  int _currentSelection = 0;  // Default to 0 for StudentLogRegister
+  int _currentSelection = 0; // Default to 0 for StudentLogRegister
 
   Map<int, Widget> _children = {
     0: Text('Student'),
@@ -58,19 +58,22 @@ class _AdminLoginState extends State<AdminLogin> {
                   borderColor: Colors.black,
                   selectedColor: color5,
                   unselectedColor: Colors.white,
-                  selectedTextStyle: TextStyle(color: color1, fontWeight: FontWeight.bold, fontSize: 16),
-                  unselectedTextStyle: TextStyle(color: color5, fontWeight: FontWeight.bold, fontSize: 16),
+                  selectedTextStyle: TextStyle(
+                      color: color1, fontWeight: FontWeight.bold, fontSize: 16),
+                  unselectedTextStyle: TextStyle(
+                      color: color5, fontWeight: FontWeight.bold, fontSize: 16),
                   borderWidth: 2,
                   borderRadius: 32.0,
                   onSegmentTapped: (index) {
-                    _switchPage(index as int);  // Call the function to switch form
+                    _switchPage(
+                        index as int); // Call the function to switch form
                   },
                 ),
               ),
               SizedBox(
                 height: MediaQuery.of(context).size.height / 40,
               ),
-              _currentWidget,  // Display the current form based on selection
+              _currentWidget, // Display the current form based on selection
             ],
           ),
         ),
@@ -78,7 +81,6 @@ class _AdminLoginState extends State<AdminLogin> {
     );
   }
 }
-
 
 class AdminLoginForm extends StatefulWidget {
   const AdminLoginForm({super.key});

@@ -16,13 +16,16 @@ class _StudentLoginState extends State<StudentLogin> {
   final GlobalKey<FormState> _formKeyValue = GlobalKey<FormState>();
   TextEditingController studentemailController = TextEditingController();
   TextEditingController studentpasswordController = TextEditingController();
+  bool isLoading = false;
 
   // Function to reset password
   Future<void> resetPassword(String email) async {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Password reset email sent. Please check your inbox.')),
+        SnackBar(
+            content:
+                Text('Password reset email sent. Please check your inbox.')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -31,9 +34,26 @@ class _StudentLoginState extends State<StudentLogin> {
     }
   }
 
-  checkValidation() {
+  Future<void> checkValidation() async {
     if (_formKeyValue.currentState!.validate()) {
-      studentLogin(studentemailController.text, studentpasswordController.text, context);
+      setState(() {
+        isLoading = true;
+      });
+      try {
+        await studentLogin(
+          studentemailController.text,
+          studentpasswordController.text,
+          context,
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: $e')),
+        );
+      } finally {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -88,19 +108,23 @@ class _StudentLoginState extends State<StudentLogin> {
                 ),
               ),
               SizedBox(height: 30),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30),
-                  backgroundColor: color5,
-                ),
-                onPressed: () {
-                  checkValidation();
-                },
-                child: Text(
-                  'Login',
-                  style: TextStyle(fontSize: 18, color: color1),
-                ),
-              ),
+
+              isLoading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 30),
+                        backgroundColor: color5,
+                      ),
+                      onPressed: () {
+                        checkValidation();
+                      },
+                      child: Text(
+                        'Login',
+                        style: TextStyle(fontSize: 18, color: color1),
+                      ),
+                    ),
               SizedBox(height: MediaQuery.of(context).size.height / 100),
 
               // Forgot Password Button
@@ -116,7 +140,8 @@ class _StudentLoginState extends State<StudentLogin> {
                 },
                 child: Text(
                   'Forgot Password?',
-                  style: TextStyle(color: color5, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: color5, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
               Row(
@@ -130,12 +155,17 @@ class _StudentLoginState extends State<StudentLogin> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => StudentRegister()),  // Replace with your registration page
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                StudentRegister()), // Replace with your registration page
                       );
                     },
                     child: Text(
                       'Create Account',
-                      style: TextStyle(color: color5, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: color5,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
