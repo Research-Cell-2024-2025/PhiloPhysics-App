@@ -95,10 +95,24 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
   final GlobalKey<FormState> _formKeyValue = new GlobalKey<FormState>();
 
   bool _isPasswordVisible = false;
+  bool isLoading = false;
 
-  checkValidation() {
+  checkValidation() async {
     if (_formKeyValue.currentState!.validate()) {
-      login(emailController.text, passwordController.text, context);
+      setState(() {
+        isLoading = true;
+      });
+      try {
+        await login(emailController.text, passwordController.text, context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed! Please Try Again')),
+        );
+      } finally {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -150,15 +164,19 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
                 suffixIcon: Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min, // Use min to avoid extra width
+                    mainAxisSize:
+                        MainAxisSize.min, // Use min to avoid extra width
                     children: [
                       IconButton(
                         icon: Icon(
-                          _isPasswordVisible ? Icons.visibility_off : Icons.visibility ,
+                          _isPasswordVisible
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
-                            _isPasswordVisible = !_isPasswordVisible; // Toggle visibility
+                            _isPasswordVisible =
+                                !_isPasswordVisible; // Toggle visibility
                           });
                         },
                       ),
@@ -171,9 +189,12 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
               ),
             ),
             SizedBox(height: 30),
-            ElevatedButton(
+            isLoading == true
+                ? CircularProgressIndicator()
+                : ElevatedButton(
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30),
+                padding:
+                EdgeInsets.symmetric(vertical: 10, horizontal: 30),
                 backgroundColor: color5,
               ),
               onPressed: () {

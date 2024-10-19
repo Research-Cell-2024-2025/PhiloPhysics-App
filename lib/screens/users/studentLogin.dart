@@ -17,6 +17,7 @@ class _StudentLoginState extends State<StudentLogin> {
   TextEditingController studentemailController = TextEditingController();
   TextEditingController studentpasswordController = TextEditingController();
   bool isLoading = false;
+  bool _isPasswordVisible = false;
 
   // Function to reset password
   Future<void> resetPassword(String email) async {
@@ -47,7 +48,7 @@ class _StudentLoginState extends State<StudentLogin> {
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed: $e')),
+          SnackBar(content: Text('Login failed! Please Try Again')),
         );
       } finally {
         setState(() {
@@ -99,8 +100,25 @@ class _StudentLoginState extends State<StudentLogin> {
                   if (value!.isEmpty) return "Enter Password";
                   return null;
                 },
-                obscureText: true,
-                decoration: InputDecoration(
+                obscureText: !_isPasswordVisible,
+                decoration: InputDecoration( suffixIcon: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min, // Use min to avoid extra width
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          _isPasswordVisible ? Icons.visibility_off : Icons.visibility ,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible; // Toggle visibility
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                   labelText: "Enter Password",
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(width: 2.0),

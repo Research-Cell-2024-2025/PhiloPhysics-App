@@ -79,7 +79,7 @@ login(String email, String password, BuildContext context) async {
 
 
 // Student registration method
-Studentregister(String email, String name, String classdiv, String password,String collegeName, BuildContext context) async {
+Future<void> Studentregister(String email, String name, String classdiv, String password,String collegeName, BuildContext context) async {
   try {
     FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -144,8 +144,11 @@ Future<void> studentLogin(String email, String password, BuildContext context) a
           showToast("Logged In as Student: $email");
           print("Logged In as Student: $email");
 
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => MyHomePage()),
+          // Navigate to the home page and remove all previous routes
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => MyApp()),
+                (Route<dynamic> route) => false, // Remove all previous routes
           );
 
           final myAppState = context.findAncestorStateOfType<MyAppState>();
@@ -164,7 +167,7 @@ Future<void> studentLogin(String email, String password, BuildContext context) a
     }
   } catch (e) {
     print("Error in studentLogin: ${e.toString()}");
-    Fluttertoast.showToast(msg: "Incorrect Credentials !",timeInSecForIosWeb: 4);
+    Fluttertoast.showToast(msg: "Incorrect Credentials ! / No Account Found",timeInSecForIosWeb: 4);
   }
 }
 

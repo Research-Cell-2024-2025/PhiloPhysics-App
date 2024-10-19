@@ -16,7 +16,7 @@ void main() async {
   await initializePreferences();
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.playIntegrity,
-   // appleProvider: AppleProvider.appAttest,
+    // appleProvider: AppleProvider.appAttest,
   );
   runApp(MyApp());
 }
@@ -44,10 +44,15 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     String? userId = prefs.getString('studentUUID');
 
     if (userId != null) {
+      print("User Id Found : ${userId}");
       _isLoggedIn = true;
       _userId = userId;
       _startTime = DateTime.now();
     }
+    else
+      {
+        print("No User Logged In / Admin Logged In");
+      }
   }
 
   // Check for updates
@@ -83,12 +88,11 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_isLoggedIn) {
       if (state == AppLifecycleState.resumed) {
-        // App brought to foreground i.e in use
+        // App brought to foreground i.e., in use
         print('Starting Time Recording');
         _startTime = DateTime.now();
       } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
@@ -101,30 +105,60 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Future<void> _logAppUsageTime() async {
     if (_isLoggedIn && _userId != null) {
       DateTime endTime = DateTime.now();
-      Duration sessionDuration = endTime.difference(_startTime);
-      await _updateUsageInFirebase(sessionDuration);
+      if (_startTime.day == endTime.day) {
+        // Simple case, same day session
+        Duration sessionDuration = endTime.difference(_startTime);
+        print("Logging same day session from ${_startTime} to ${endTime}");
+        await _updateUsageInFirebase(_startTime, sessionDuration);
+      } else {
+        // Spans across midnight
+        print("Session spanned across midnight from ${_startTime} to ${endTime}");
+        DateTime midnight = DateTime(
+          _startTime.year,
+          _startTime.month,
+          _startTime.day,
+          23,
+          59,
+          59,
+        );
+
+        // Duration up to midnight
+        Duration beforeMidnight = midnight.difference(_startTime).abs();
+        print("Passing X-day : ${_startTime} and ${beforeMidnight}");
+        await _updateUsageInFirebase(_startTime, beforeMidnight);
+
+        // Duration from midnight to end time
+        DateTime nextDayStart = midnight.add(Duration(seconds: 1));
+        Duration afterMidnight = endTime.difference(nextDayStart);
+        print("Passing (X+1)-day : ${nextDayStart} and ${afterMidnight}");
+        await _updateUsageInFirebase(nextDayStart, afterMidnight);
+      }
     }
   }
 
-  Future<void> _updateUsageInFirebase(Duration sessionDuration) async {
+  Future<void> _updateUsageInFirebase(DateTime usageDate, Duration sessionDuration) async {
     String userId = _userId!;
-    String currentMonth = DateFormat('MMM yyyy').format(DateTime.now());
+    String currentMonth = DateFormat('MMM yyyy').format(usageDate);
+    String dateKey = DateFormat('dd-MM-yyyy').format(usageDate);
 
     DatabaseReference dbRef = FirebaseDatabase.instance.ref();
-    DatabaseReference userUsageRef = dbRef.child('Users').child(userId).child('AppUsage').child(currentMonth);
+    DatabaseReference userUsageRef = dbRef.child('Users').child(userId).child('AppUsage').child(currentMonth).child(dateKey);
 
     DataSnapshot snapshot = await userUsageRef.once().then((event) => event.snapshot);
     Duration totalUsage = Duration();
 
     if (snapshot.exists) {
       totalUsage = _parseDuration(snapshot.value as String);
+      print("Existing usage for $dateKey: ${_formatDuration(totalUsage)}");
+    } else {
+      print("No existing usage found for $dateKey. Creating new entry.");
     }
 
     totalUsage += sessionDuration;
     String formattedUsage = _formatDuration(totalUsage);
+
+    print("Total usage for $dateKey updated: $formattedUsage");
     await userUsageRef.set(formattedUsage);
-    print("Formated Usage : $formattedUsage");
-    print("Total Usage $totalUsage");
   }
 
   Duration _parseDuration(String durationStr) {

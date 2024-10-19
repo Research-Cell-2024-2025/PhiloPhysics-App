@@ -12,6 +12,7 @@ class StudentRegister extends StatefulWidget {
 }
 
 class _StudentRegisterState extends State<StudentRegister> {
+
   String password = '';
   String confirmPassword = '';
 
@@ -24,23 +25,22 @@ class _StudentRegisterState extends State<StudentRegister> {
   FocusNode passwordFocusNode = FocusNode();
   bool isPasswordFieldFocused = false;
 
-  bool isLoading = false;
-
   final GlobalKey<FormState> _formKeyValue = GlobalKey<FormState>();
 
-  TextEditingController studentAccCreationemailController =
-      TextEditingController();
-  TextEditingController studentAccCreationnameController =
-      TextEditingController();
-  TextEditingController studentAccCreationYearDivController =
-      TextEditingController();
-  TextEditingController studentAccCreationpasswordController =
-      TextEditingController();
+  TextEditingController studentAccCreationemailController = TextEditingController();
+  TextEditingController studentAccCreationnameController = TextEditingController();
+  TextEditingController studentAccCreationYearDivController = TextEditingController();
+  TextEditingController studentAccCreationpasswordController = TextEditingController();
   TextEditingController otherCollegeNameController = TextEditingController();
 
   // Track the selected college radio button
   String _selectedCollege = 'Sakec';
   bool _isOtherCollegeSelected = false;
+
+  bool _isPasswordVisible = false; // Track password visibility
+  bool _isConfPasswordVisible = false;
+
+  bool isLoading = false;
 
   Future<void> checkValidation() async {
     if (!_formKeyValue.currentState!.validate()) {
@@ -58,16 +58,14 @@ class _StudentRegisterState extends State<StudentRegister> {
       return;
     }
 
+    String collegeName = _selectedCollege == 'Sakec'
+        ? 'Sakec'
+        : otherCollegeNameController.text;
+
     setState(() {
       isLoading = true;
     });
-
-    try {
-      String collegeName = _selectedCollege == 'Sakec'
-          ? 'Sakec'
-          : otherCollegeNameController.text;
-
-      // Call the registration method with the appropriate values
+    try{
       await Studentregister(
         studentAccCreationemailController.text,
         studentAccCreationnameController.text,
@@ -76,12 +74,17 @@ class _StudentRegisterState extends State<StudentRegister> {
         collegeName,
         context,
       );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed! Please Try Again')),
+      );
     } finally {
       setState(() {
         isLoading = false;
       });
     }
   }
+
 
   @override
   void initState() {
@@ -92,6 +95,7 @@ class _StudentRegisterState extends State<StudentRegister> {
       });
     });
   }
+
 
   void checkPasswordStrength(String password) {
     setState(() {
@@ -114,6 +118,20 @@ class _StudentRegisterState extends State<StudentRegister> {
     return Icon(
       criteria ? Icons.check_circle : Icons.cancel,
       color: criteria ? Colors.green : Colors.red,
+    );
+  }
+
+  Widget buildPasswordCheckConditions() {
+    if(hasUppercase == true && hasMinLength == true && hasNumber == true && hasSpecialChar == true)
+      {
+        return Icon(
+          Icons.check_circle,
+          color: Colors.green,
+        );
+      }
+    return Icon(
+      Icons.cancel,
+      color: Colors.red,
     );
   }
 
@@ -165,8 +183,7 @@ class _StudentRegisterState extends State<StudentRegister> {
                     children: [
                       Text(
                         "Enter College: ",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w400),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                       ),
                       SizedBox(width: 10),
                       Expanded(
@@ -182,14 +199,11 @@ class _StudentRegisterState extends State<StudentRegister> {
                                 });
                               },
                             ),
-                            Text(
-                              'SAKEC',
-                              style: GoogleFonts.roboto(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  fontStyle: FontStyle.normal,
-                                  color: color5),
-                            ),
+                            Text('SAKEC', style: GoogleFonts.roboto(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                fontStyle: FontStyle.normal,
+                                color: color5),),
                             SizedBox(width: 10),
                             Radio<String>(
                               value: 'Others',
@@ -201,14 +215,11 @@ class _StudentRegisterState extends State<StudentRegister> {
                                 });
                               },
                             ),
-                            Text(
-                              'OTHER',
-                              style: GoogleFonts.roboto(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  fontStyle: FontStyle.normal,
-                                  color: color5),
-                            ),
+                            Text('OTHER', style: GoogleFonts.roboto(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                fontStyle: FontStyle.normal,
+                                color: color5),),
                           ],
                         ),
                       ),
@@ -218,9 +229,7 @@ class _StudentRegisterState extends State<StudentRegister> {
                 if (_isOtherCollegeSelected)
                   Column(
                     children: [
-                      SizedBox(
-                        height: 10,
-                      ),
+                      SizedBox(height: 10,),
                       TextFormField(
                         controller: otherCollegeNameController,
                         validator: (value) {
@@ -241,7 +250,7 @@ class _StudentRegisterState extends State<StudentRegister> {
                       ),
                     ],
                   ),
-                SizedBox(height: 20),
+                SizedBox(height : 20),
                 TextFormField(
                   controller: studentAccCreationemailController,
                   validator: (value) {
@@ -285,12 +294,33 @@ class _StudentRegisterState extends State<StudentRegister> {
                   onChanged: (value) {
                     checkPasswordStrength(value); // Real-time check
                   },
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
+                  obscureText: !_isPasswordVisible,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
                     labelText: "Enter Password",
-                    focusedBorder: OutlineInputBorder(
+                    focusedBorder: const OutlineInputBorder(
                       borderSide: BorderSide(width: 2.0),
+                    ),
+                    hintText: 'Enter your password',
+                    // Adjusting the suffix icon for consistent height
+                    suffixIcon: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min, // Use min to avoid extra width
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible; // Toggle visibility
+                              });
+                            },
+                          ),
+                          buildPasswordCheckConditions(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -334,37 +364,50 @@ class _StudentRegisterState extends State<StudentRegister> {
                     if (value!.isEmpty) return "Enter Confirm Password";
                     return null;
                   },
-                  obscureText: true,
+                  obscureText: !_isConfPasswordVisible,
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
                     border: OutlineInputBorder(),
-                    suffixIcon: buildPasswordCriteriaIcon(isPasswordMatching),
+                    suffixIcon: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min, // Use min to avoid extra width
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              _isConfPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isConfPasswordVisible = !_isConfPasswordVisible; // Toggle visibility
+                              });
+                            },
+                          ),
+                          buildPasswordCriteriaIcon(isPasswordMatching),
+                        ],
+                      ),
+                    ),
                   ),
                   onChanged: (value) {
                     checkPasswordMatch(value);
                   },
                 ),
                 SizedBox(height: 20),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 30),
-                        backgroundColor: color5,
-                      ),
-                      onPressed: isLoading ? null : checkValidation,
-                      child: const Text(
-                        'Register',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
-                      ),
-                    ),
-                    if (isLoading)
-                      const CircularProgressIndicator(
-                        color: Colors.white,
-                      )
-                  ],
+                isLoading
+                    ? CircularProgressIndicator()
+                    : ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding:
+                    EdgeInsets.symmetric(vertical: 10, horizontal: 30),
+                    backgroundColor: color5,
+                  ),
+                  onPressed: () {
+                    checkValidation();
+                  },
+                  child: Text(
+                    'Register',
+                    style: TextStyle(fontSize: 18, color: color1),
+                  ),
                 ),
               ],
             ),
