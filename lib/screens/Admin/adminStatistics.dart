@@ -1,8 +1,11 @@
 import 'dart:collection';
+import 'package:ephysicsapp/globals/colors.dart';
+import 'package:ephysicsapp/screens/Admin/annualAdminAppUsageStatistics.dart';
+import 'package:ephysicsapp/screens/Admin/monthlyAdminAppUsageStatistics.dart';
+import 'package:ephysicsapp/screens/Admin/weeklyAdminAppUsageStatistics.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-
-import 'adminAppUsageStatistics.dart';
+import 'package:material_segmented_control/material_segmented_control.dart';
 
 class AdminStatistics extends StatefulWidget {
   const AdminStatistics({super.key});
@@ -17,6 +20,30 @@ class _AdminStatisticsState extends State<AdminStatistics> {
   int totalVideosViewed = 0;
   int uniqueCollegesCount = 0;
   bool isLoading = true; // To manage loading state
+  int _currentSelection = 0; // Default to 0 for StudentLogRegister
+
+  Map<int, Widget> _children = {
+    0: Text('Annual'),
+    1: Text('Monthly'),
+    2: Text('Weekly'),
+  };
+
+  // Widget to display the current form
+  Widget _currentWidget = AnnualAdminAppUsageStatistics();
+
+  // Function to switch between the graphs
+  void _switchPage(int index) {
+    setState(() {
+      _currentSelection = index;
+      if (index == 0) {
+        _currentWidget = AnnualAdminAppUsageStatistics();
+      } else if (index == 1) {
+        _currentWidget = MonthlyAdminAppUsageStatistics();
+      } else if (index == 2) {
+        _currentWidget = WeeklyAdminAppUsageStatistics();
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -29,14 +56,14 @@ class _AdminStatisticsState extends State<AdminStatistics> {
 
     try {
       DataSnapshot snapshot =
-      await dbRef.once().then((event) => event.snapshot);
+          await dbRef.once().then((event) => event.snapshot);
 
       if (snapshot.exists) {
         Set<String> uniqueColleges = HashSet<String>();
 
         snapshot.children.forEach((userSnapshot) {
           Map<dynamic, dynamic> userData =
-          userSnapshot.value as Map<dynamic, dynamic>;
+              userSnapshot.value as Map<dynamic, dynamic>;
 
           if (userData.containsKey('pdfsViewed')) {
             totalPdfsViewed += (userData['pdfsViewed'] as num).toInt();
@@ -72,121 +99,57 @@ class _AdminStatisticsState extends State<AdminStatistics> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Statistics'),
+        title: Text("Admin Statistics"),
         centerTitle: true,
       ),
       body: isLoading
-          ? const Center(
-        child: CircularProgressIndicator(),
-      )
-          : Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 20.0),
-          child: GridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 20.0,
-            mainAxisSpacing: 20.0,
-            childAspectRatio: 1.125,
-            children: [
-              _buildStatBox(
-                  Icons.people,
-                  'Total Users',
-                  userCount.toString(),
-                  const Color(0xFF4A90E2), // Blue Gradient
-                  context,
-                  AdminAppUsageStatistics()),
-              _buildStatBox(
-                  Icons.picture_as_pdf,
-                  'PDFs Viewed',
-                  totalPdfsViewed.toString(),
-                  const Color(0xFF50E3C2), // Green Gradient
-                  context,
-                  null),
-              _buildStatBox(
-                  Icons.video_library,
-                  'Videos Viewed',
-                  totalVideosViewed.toString(),
-                  const Color(0xFFF5A623), // Orange Gradient
-                  context,
-                  null),
-              _buildStatBox(
-                  Icons.school,
-                  'Unique Colleges',
-                  uniqueCollegesCount.toString(),
-                  const Color(0xFFD0021B), // Red Gradient
-                  context,
-                  null),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatBox(IconData icon, String label, String value, Color color,
-      BuildContext context, Widget? pageToNavigate) {
-    bool isTapped = false;
-
-    return GestureDetector(
-      onTapDown: (_) => setState(() => isTapped = true),
-      onTapUp: (_) => setState(() => isTapped = false),
-      onTapCancel: () => setState(() => isTapped = false),
-      onTap: () {
-        if (pageToNavigate != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => pageToNavigate),
-          );
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        transform: Matrix4.identity()..scale(isTapped ? 0.98 : 1.0),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color.withOpacity(0.7), color],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.4),
-              spreadRadius: 2,
-              blurRadius: 10,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: MediaQuery.of(context).size.width / 8,
-              color: Colors.white,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height / 40,
+                  ),
+                  Container(
+                    width: MediaQuery.of(context).size.width,
+                    child: MaterialSegmentedControl(
+                      children: _children,
+                      selectionIndex: _currentSelection,
+                      borderColor: Colors.black,
+                      selectedColor: color5,
+                      unselectedColor: Colors.white,
+                      selectedTextStyle: TextStyle(
+                          color: color1,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16),
+                      unselectedTextStyle: TextStyle(
+                          color: color5,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16),
+                      borderWidth: 2,
+                      borderRadius: 32.0,
+                      onSegmentTapped: (index) {
+                        _switchPage(
+                            index as int); // Call the function to switch form
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height / 40,
+                  ),
+                  Container(
+                    width: double.infinity,
+                    constraints: BoxConstraints(
+                      minHeight: MediaQuery.of(context).size.height * 0.5,
+                      maxHeight: MediaQuery.of(context).size.height * 0.8,
+                    ),
+                    child: _currentWidget,
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 5),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

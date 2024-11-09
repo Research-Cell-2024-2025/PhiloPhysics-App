@@ -4,16 +4,16 @@ import 'package:ephysicsapp/widgets/pdfViewer.dart';
 import 'package:ephysicsapp/widgets/popUps.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
-
-
-addDoc({required String section, required String moduleID, required String docName, required File doc}) async {
+addDoc(
+    {required String section,
+    required String moduleID,
+    required String docName,
+    required File doc}) async {
   var uuid = Uuid();
   String uniqueID = uuid.v1();
   late String downloadUrl;
@@ -44,8 +44,6 @@ addDoc({required String section, required String moduleID, required String docNa
     showToast("Failed to add Video");
   }
 }
-
-
 
 Future<void> addVideo({
   required String section,
@@ -99,9 +97,10 @@ String _convertYouTubeLink(String link) {
   return link;
 }
 
-
-
-deleteDoc({required String docID, required String moduleID, required String section}) async {
+deleteDoc(
+    {required String docID,
+    required String moduleID,
+    required String section}) async {
   var storageReference =
       FirebaseStorage.instance.ref().child("$section/$moduleID/" + docID);
   var uploadTask = storageReference.delete();
@@ -117,8 +116,7 @@ deleteDoc({required String docID, required String moduleID, required String sect
   });
 }
 
-Future<void> openFile(String url, BuildContext context,String title) async {
-
+Future<void> openFile(String url, BuildContext context, String title) async {
   // ProgressDialog _progressDialog = ProgressDialog();
   // _progressDialog.showProgressDialog(
   //   context,textToBeDisplayed: 'Opening...',
@@ -130,15 +128,17 @@ Future<void> openFile(String url, BuildContext context,String title) async {
     remotePDFpath = f.path;
 
     if (remotePDFpath != null || remotePDFpath.isNotEmpty) {
-     //  _progressDialog.dismissProgressDialog(context);
+      //  _progressDialog.dismissProgressDialog(context);
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PDFScreen(path: remotePDFpath,title: title,),
+          builder: (context) => PDFScreen(
+            path: remotePDFpath,
+            title: title,
+          ),
         ),
       );
     }
-
   });
 }
 
@@ -155,15 +155,15 @@ Future<File> createFileOfPdfUrl(String pdfUrl) async {
     print("${dir.path}/$filename");
     File file = File("${dir.path}/$filename");
 
-    if(!(await file.exists())){
-    print("--------------------doesnt  exist");
-    var request = await HttpClient().getUrl(Uri.parse(url));
-    var response = await request.close();
-    var bytes = await consolidateHttpClientResponseBytes(response);
-    await file.writeAsBytes(bytes, flush: true);
-    }
-    else print("--------------------Already exist");
-   
+    if (!(await file.exists())) {
+      print("--------------------doesnt  exist");
+      var request = await HttpClient().getUrl(Uri.parse(url));
+      var response = await request.close();
+      var bytes = await consolidateHttpClientResponseBytes(response);
+      await file.writeAsBytes(bytes, flush: true);
+    } else
+      print("--------------------Already exist");
+
     completer.complete(file);
   } catch (e) {
     throw Exception('Error parsing asset file!');
