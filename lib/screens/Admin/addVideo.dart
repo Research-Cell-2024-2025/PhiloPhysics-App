@@ -16,6 +16,8 @@ class AddVideo extends StatefulWidget {
 class _AddVideoState extends State<AddVideo> {
   TextEditingController videoNameController = TextEditingController();
   TextEditingController videoYtLinkController = TextEditingController();
+  TextEditingController videothumbnailController = TextEditingController();
+
   final GlobalKey<FormState> _formKeyValue = GlobalKey<FormState>();
 
   String getThumbnailUrl(String videoUrl) {
@@ -44,14 +46,12 @@ class _AddVideoState extends State<AddVideo> {
   }
 
   Future<void> getFuture() async {
-    String thumbnailUrl = getThumbnailUrl(videoYtLinkController.text);
-
-    await addVideo(
+     await addVideo(
       section: widget.section,
       moduleID: widget.moduleID,
       docName: videoNameController.text,
       docLink: videoYtLinkController.text,
-      thumbnailLink: thumbnailUrl,
+      thumbnailLink: videothumbnailController.text,
       context: context,
     );
 
@@ -62,7 +62,7 @@ class _AddVideoState extends State<AddVideo> {
   void checkValidation() {
     if (_formKeyValue.currentState!.validate() &&
         videoNameController.text.isNotEmpty &&
-        videoYtLinkController.text.isNotEmpty) {
+        videoYtLinkController.text.isNotEmpty && videothumbnailController.text.isNotEmpty) {
       showProgress(context);
     } else {
       showToast("Please enter details and select files");
@@ -122,6 +122,23 @@ class _AddVideoState extends State<AddVideo> {
                 minLines: 2,
                 decoration: InputDecoration(
                   labelText: "Enter Video Link",
+                  fillColor: Colors.white,
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(width: 2.0, color: Colors.blue),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20,),
+              TextFormField(
+                controller: videothumbnailController,
+                validator: (value) {
+                  if (value!.isEmpty) return "Enter Video Thumbnail Link";
+                  return null;
+                },
+                maxLines: 4,
+                minLines: 2,
+                decoration: InputDecoration(
+                  labelText: "Enter Video Thumbnail Link",
                   fillColor: Colors.white,
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(width: 2.0, color: Colors.blue),

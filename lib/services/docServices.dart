@@ -57,9 +57,6 @@ Future<void> addVideo({
   String uniqueID = uuid.v1();
 
   try {
-    // Convert the YouTube shortened URL to a standard format if needed
-    String formattedDocLink = _convertYouTubeLink(docLink);
-
     final databaseReference = FirebaseDatabase.instance.ref();
     await databaseReference
         .child(section)
@@ -69,17 +66,17 @@ Future<void> addVideo({
         .set({
       "videoName": docName,
       "docID": uniqueID,
-      "videoDownloadUrl": formattedDocLink, // Use the formatted link
+      "videoDownloadUrl": docLink,
       "thumbnailDownloadUrl": thumbnailLink,
     });
     print(docLink);
-    print(formattedDocLink);
+    print(docLink);
     showToast("Video Added Successfully");
-    print("$formattedDocLink && $thumbnailLink");
+    print("$docLink && $thumbnailLink");
     Navigator.pop(context);
   } catch (e) {
     print(e);
-    showToast("Failed");
+    showToast("Failed to add Video");
   }
 }
 
@@ -204,3 +201,60 @@ Future<File> createFileOfPdfUrl(String pdfUrl) async {
 
 //   }
 // }
+
+
+
+Future<void> addDriveVideo({
+  required String section,
+  required String moduleID,
+  required String docName,
+  required String driveLink,
+  required String thumbnailLink,
+  required BuildContext context,
+}) async {
+  var uuid = Uuid();
+  String uniqueID = uuid.v1();
+
+  try {
+    // Extract the Google Drive file ID from the link
+    String fileID = extractDriveFileID(driveLink);
+    if (fileID.isEmpty) {
+      showToast("Invalid Google Drive Link");
+      return;
+    }
+
+    // Convert the Google Drive link to a downloadable format
+    String formattedLink = "https://drive.google.com/uc?export=download&id=$fileID";
+
+    final databaseReference = FirebaseDatabase.instance.ref();
+    await databaseReference
+        .child(section)
+        .child(moduleID)
+        .child("videos")
+        .child(uniqueID)
+        .set({
+      "videoName": docName,
+      "docID": uniqueID,
+      "videoDownloadUrl": formattedLink,
+      "thumbnailDownloadUrl": thumbnailLink,
+    });
+
+    print(formattedLink);
+    showToast("Google Drive Video Added Successfully");
+    Navigator.pop(context);
+  } catch (e) {
+    print(e);
+    showToast("Failed to add video");
+  }
+}
+
+// Helper function to extract file ID from Google Drive link
+String extractDriveFileID(String link) {
+  final regex = RegExp(r'\/d\/(.*?)\/');
+  final match = regex.firstMatch(link);
+  if (match != null) {
+    final fileID = match.group(1);
+    return 'https://drive.google.com/uc?export=download&id=$fileID';
+  }
+  return '';
+}

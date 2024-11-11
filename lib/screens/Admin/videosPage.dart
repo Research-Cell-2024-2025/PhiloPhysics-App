@@ -321,13 +321,13 @@
 //     );
 //   }
 // }
+import 'package:better_player/better_player.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:ephysicsapp/globals/colors.dart';
 import 'package:ephysicsapp/services/authentication.dart';
 import 'package:ephysicsapp/services/general.dart';
 import 'package:ephysicsapp/widgets/popUps.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class VideosListPage extends StatelessWidget {
   final String section;
@@ -544,91 +544,88 @@ class VideosListPage extends StatelessWidget {
 
   void navigateToVideoDetailPage(
       BuildContext context, Map<dynamic, dynamic> videoDetails) {
-    String videoId =
-        YoutubePlayer.convertUrlToId(videoDetails['videoDownloadUrl']) ?? '';
+    String videoId = videoDetails['videoDownloadUrl'];
     if (videoId.isNotEmpty) {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => VideoDetailPage(
-            videoId: videoId,
+            videoUrl: videoId,
             videoName: videoDetails['videoName'] ?? 'Video',
           ),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Invalid YouTube URL")),
+        SnackBar(content: Text("Invalid Video URL")),
       );
     }
   }
 }
 
+
+
 class VideoDetailPage extends StatefulWidget {
-  final String videoId;
+  final String videoUrl;
   final String videoName;
 
-  VideoDetailPage({required this.videoId, required this.videoName});
+  VideoDetailPage({required this.videoUrl, required this.videoName});
 
   @override
   _VideoDetailPageState createState() => _VideoDetailPageState();
 }
 
 class _VideoDetailPageState extends State<VideoDetailPage> {
-  late YoutubePlayerController _controller;
+  late BetterPlayerController _betterPlayerController;
 
   @override
   void initState() {
+    print("Video being played from Clodinary");
+    print(widget.videoUrl);
     super.initState();
-    _controller = YoutubePlayerController(
-      initialVideoId: widget.videoId,
-      flags: YoutubePlayerFlags(
-        autoPlay: true,
-        hideControls: false,
-        mute: false,
+
+    // Initialize BetterPlayer configuration
+    BetterPlayerConfiguration betterPlayerConfiguration = BetterPlayerConfiguration(
+
+      aspectRatio: 16 / 9,
+      autoPlay: true,
+      looping: false,
+      fullScreenByDefault: false,
+      controlsConfiguration: BetterPlayerControlsConfiguration(
+        enableQualities: false,
+        showControls: true,
+        enableSkips: true,
+        backwardSkipTimeInMilliseconds: 10000,
+        forwardSkipTimeInMilliseconds: 10000, // 10 seconds
+        enableSubtitles: true
       ),
     );
+
+    // Specify the video URL
+    BetterPlayerDataSource dataSource = BetterPlayerDataSource(
+      BetterPlayerDataSourceType.network,
+      widget.videoUrl,
+    );
+
+    _betterPlayerController = BetterPlayerController(betterPlayerConfiguration);
+    _betterPlayerController.setupDataSource(dataSource);
   }
 
   @override
   Widget build(BuildContext context) {
-    return YoutubePlayerBuilder(
-      player: YoutubePlayer(
-        controller: _controller,
-        showVideoProgressIndicator: true,
-        onEnded: (metaData) {
-          _controller.seekTo(Duration.zero);
-          _controller.pause();
-        },
-        progressIndicatorColor: Colors.blueAccent,
-        progressColors: ProgressBarColors(
-          playedColor: Colors.blue,
-          handleColor: Colors.blueAccent,
+    return Scaffold(
+      appBar: AppBar(title: Text("Cloudinary Video Player")),
+      body: Center(
+        child: BetterPlayer(
+          controller: _betterPlayerController,
         ),
       ),
-      builder: (context, player) {
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(widget.videoName),
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back),
-              onPressed: () {
-                _controller.pause();
-                Navigator.of(context).pop();
-              },
-            ),
-          ),
-          body: Center(
-            child: player,
-          ),
-        );
-      },
     );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _betterPlayerController.dispose();
     super.dispose();
   }
 }
