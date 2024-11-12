@@ -563,8 +563,6 @@ class VideosListPage extends StatelessWidget {
   }
 }
 
-
-
 class VideoDetailPage extends StatefulWidget {
   final String videoUrl;
   final String videoName;
@@ -585,20 +583,19 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
     super.initState();
 
     // Initialize BetterPlayer configuration
-    BetterPlayerConfiguration betterPlayerConfiguration = BetterPlayerConfiguration(
-
+    BetterPlayerConfiguration betterPlayerConfiguration =
+        BetterPlayerConfiguration(
       aspectRatio: 16 / 9,
       autoPlay: true,
       looping: false,
       fullScreenByDefault: false,
       controlsConfiguration: BetterPlayerControlsConfiguration(
-        enableQualities: false,
-        showControls: true,
-        enableSkips: true,
-        backwardSkipTimeInMilliseconds: 10000,
-        forwardSkipTimeInMilliseconds: 10000, // 10 seconds
-        enableSubtitles: true
-      ),
+          enableQualities: false,
+          showControls: true,
+          enableSkips: true,
+          backwardSkipTimeInMilliseconds: 10000,
+          forwardSkipTimeInMilliseconds: 10000, // 10 seconds
+          enableSubtitles: true),
     );
 
     // Specify the video URL
@@ -614,7 +611,7 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Cloudinary Video Player")),
+      appBar: AppBar(title: Text(widget.videoName)),
       body: Center(
         child: BetterPlayer(
           controller: _betterPlayerController,

@@ -154,35 +154,38 @@ class _WeeklyAdminAppUsageStatisticsState
                     const SizedBox(height: 24),
                     GestureDetector(
                       onTap: _showWeekPicker,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.2),
-                              spreadRadius: 2,
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              DateFormat('MMM d, yyyy').format(_selectedWeek),
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.2),
+                                spreadRadius: 2,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
-                            ),
-                            const Icon(Icons.calendar_today,
-                                color: Colors.grey),
-                          ],
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                DateFormat('MMM d, yyyy').format(_selectedWeek),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const Icon(Icons.calendar_today,
+                                  color: Colors.grey),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -311,14 +314,15 @@ class GraphContainer extends StatelessWidget {
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
+                      reservedSize: 30,
                       interval: yInterval.toDouble(),
                       getTitlesWidget: (value, meta) {
                         return Text(
-                          '${value.toInt()}',
+                          '${value.toInt()}m',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             color: Colors.black87,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.bold,
                           ),
                         );
                       },
@@ -349,9 +353,35 @@ class GraphContainer extends StatelessWidget {
                     ),
                   ),
                 ),
-                borderData: FlBorderData(show: false),
+                borderData: FlBorderData(
+                  show: true,
+                  border: Border(
+                    left: BorderSide(
+                        color: Colors.black, width: 1), // Left Y-axis
+                    bottom: BorderSide(
+                        color: Colors.black, width: 1), // Bottom X-axis
+                  ),
+                ),
                 barGroups: getChartData(),
-                gridData: FlGridData(show: false),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: true,
+                  drawHorizontalLine: true,
+                  horizontalInterval: yInterval.toDouble(),
+                  verticalInterval: 1,
+                  getDrawingHorizontalLine: (value) {
+                    return FlLine(
+                      color: Colors.grey.withOpacity(0.3),
+                      strokeWidth: 1,
+                    );
+                  },
+                  getDrawingVerticalLine: (value) {
+                    return FlLine(
+                      color: Colors.grey.withOpacity(0.3),
+                      strokeWidth: 1,
+                    );
+                  },
+                ),
               ),
             ),
           ),

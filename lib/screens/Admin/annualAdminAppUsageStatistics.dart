@@ -222,6 +222,10 @@ class _AdminStatisticsState extends State<AnnualAdminAppUsageStatistics> {
     return getSemesterChartData(year, false);
   }
 
+  int getNewYear() {
+    return int.parse(availableYears[currentYearIndex]) + 1;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -241,7 +245,7 @@ class _AdminStatisticsState extends State<AnnualAdminAppUsageStatistics> {
                         children: [
                           const SizedBox(height: 24),
                           Text(
-                            'Usage Statistics: ${availableYears[currentYearIndex]}',
+                            'Usage Statistics: ${availableYears[currentYearIndex]} - ${getNewYear().toString().substring(2)}',
                             style: GoogleFonts.poppins(
                               fontSize: 26,
                               color: Colors.white,
@@ -318,87 +322,73 @@ class GraphContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 5,
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      width: MediaQuery.of(context).size.width,
-      height: 220, // Adjust height as necessary
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              color: Colors.black87,
-              fontWeight: FontWeight.w600,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 5,
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: BarChart(
-              BarChartData(
-                barTouchData: BarTouchData(
-                  touchTooltipData: BarTouchTooltipData(
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      double totalSeconds = rod.toY * 60;
-                      String formattedTime = formatSeconds(totalSeconds);
+          ],
+        ),
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height / 4,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 15.0),
+            Expanded(
+              child: BarChart(
+                BarChartData(
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        double totalSeconds = rod.toY * 60;
+                        String formattedTime = formatSeconds(totalSeconds);
 
-                      return BarTooltipItem(
-                        formattedTime,
-                        TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                alignment: BarChartAlignment.spaceAround,
-                maxY: maxY,
-                minY: 0,
-                groupsSpace: 18,
-                titlesData: FlTitlesData(
-                  show: true,
-                  topTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 50,
-                      interval: yInterval.toDouble(),
-                      getTitlesWidget: (value, meta) => Text(
-                        formatYAxisLabel(value),
-                        style: GoogleFonts.poppins(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
+                        return BarTooltipItem(
+                          formattedTime,
+                          TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      },
                     ),
                   ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      getTitlesWidget: (value, meta) => Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          months[value.toInt()],
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: maxY,
+                  minY: 0,
+                  groupsSpace: 18,
+                  titlesData: FlTitlesData(
+                    show: true,
+                    topTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 50,
+                        interval: yInterval.toDouble(),
+                        getTitlesWidget: (value, meta) => Text(
+                          formatYAxisLabel(value),
                           style: GoogleFonts.poppins(
                             color: Colors.black,
                             fontWeight: FontWeight.bold,
@@ -407,14 +397,54 @@ class GraphContainer extends StatelessWidget {
                         ),
                       ),
                     ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, meta) => Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            months[value.toInt()],
+                            style: GoogleFonts.poppins(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
+                  gridData: FlGridData(
+                    show: true,
+                    drawHorizontalLine: true,
+                    drawVerticalLine: true,
+                    horizontalInterval: yInterval.toDouble(),
+                    verticalInterval: 1,
+                    getDrawingHorizontalLine: (value) {
+                      return FlLine(
+                        color: Colors.grey.withOpacity(0.3),
+                        strokeWidth: 1,
+                      );
+                    },
+                  ),
+                  borderData: FlBorderData(
+                      show: true,
+                      border: Border(
+                          left: BorderSide(
+                            color: Colors.black,
+                            width: 1,
+                          ),
+                          bottom: BorderSide(
+                            color: Colors.black,
+                            width: 1,
+                          ))),
+                  barGroups: getChartData(year),
                 ),
-                gridData: FlGridData(show: false),
-                barGroups: getChartData(year),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
