@@ -217,30 +217,7 @@ Widget videosUserCard({
         ),
         trailing: Icon(Icons.keyboard_arrow_right, color: color5, size: 30.0),
           onTap: () async {
-            // Retrieve the studentUUID from SharedPreferences
-            String? studentUUID = prefs.getString('studentUUID');
-
-            if (studentUUID != null) {
-              // Reference to the Realtime Database
-              DatabaseReference dbRef = FirebaseDatabase.instance.ref();
-
-              // Fetch the current videosViewed count for the specific student
-              DatabaseEvent event = await dbRef.child('Users').child(studentUUID).child('videosViewed').once();
-              DataSnapshot snapshot = event.snapshot; // Get the snapshot from the DatabaseEvent
-
-              if (snapshot.exists) {
-                // Get the current videosViewed count and increment it
-                int currentViewCount = snapshot.value as int;
-                await dbRef.child('Users').child(studentUUID).update({
-                  'videosViewed': currentViewCount + 1
-                });
-                print("Incremented in User Videos");
-              } else {
-                // If the videosViewed does not exist, initialize it to 1
-                await dbRef.child('Users').child(studentUUID).child('videosViewed').set(1);
-                print("Init in User Video");
-              }
-
+          print("Pushing to module videos");
               // Navigate to the VideosListPage after updating the view count
               Navigator.push(
                 context,
@@ -251,10 +228,6 @@ Widget videosUserCard({
                   ),
                 ),
               );
-            } else {
-              // Handle the case when studentUUID is not found
-              showToast("User not logged in.");
-            }
           }
       ),
     ),

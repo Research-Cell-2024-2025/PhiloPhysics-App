@@ -61,6 +61,9 @@ dependencies:
   video_player: ^2.9.2
   chewie: ^1.8.5
   better_player: ^0.0.84
+  syncfusion_flutter_pdfviewer: ^27.1.58
+  font_awesome_flutter: ^10.8.0
+  google_sign_in: ^6.2.2
 
 dev_dependencies:
   flutter_test:

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:ephysicsapp/globals/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:no_screenshot/no_screenshot.dart';
 
 class PDFScreen extends StatefulWidget {
@@ -23,7 +24,6 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // The no_screenshot package will handle screenshot prevention.
     NoScreenshot.instance.screenshotOff();
   }
 
@@ -34,11 +34,65 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  // Function to go to the previous page
+  void goToPreviousPage() {
+    if (currentPage > 0) {
+      setState(() {
+        currentPage--;
+      });
+      _controller.future.then((pdfViewController) {
+        pdfViewController.setPage(currentPage);
+      });
+    }
+  }
+
+  // Function to go to the next page
+  void goToNextPage() {
+    if (currentPage < pages - 1) {
+      setState(() {
+        currentPage++;
+      });
+      _controller.future.then((pdfViewController) {
+        pdfViewController.setPage(currentPage);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: [
+          // Row for positioning the arrows
+          Padding(
+            padding: EdgeInsets.only(right: MediaQuery.of(context).size.width / 50),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,  // Align buttons to the right
+              children: [
+                // Left arrow button (previous page)
+                IconButton(
+                  icon: Icon(
+                    Icons.arrow_back_rounded,  // Arrow for page back
+                    color: currentPage == 0 ? Colors.grey : Colors.black,  // Disable when on the first page
+                  ),
+                  onPressed: currentPage == 0 ? null : goToPreviousPage,  // Disable action when on the first page
+                ),
+
+                // Add some spacing between the arrows
+                SizedBox(width: MediaQuery.of(context).size.width / 300),  // You can adjust the width to control the gap
+                // Right arrow button (next page)
+                IconButton(
+                  icon: Icon(
+                    Icons.arrow_forward_rounded,  // Arrow for page forward
+                    color: currentPage == pages - 1 || pages == 1 ? Colors.grey : Colors.black,  // Disable when on the last page
+                  ),
+                  onPressed: currentPage == pages - 1 || pages == 1 ? null : goToNextPage,  // Disable action when on the last page
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       body: Stack(
         children: <Widget>[
@@ -49,6 +103,7 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
             autoSpacing: true,
             pageFling: false,
             pageSnap: true,
+            fitEachPage: true,
             defaultPage: currentPage,
             fitPolicy: FitPolicy.BOTH,
             preventLinkNavigation: false,
@@ -70,8 +125,12 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
               });
               print('$page: ${error.toString()}');
             },
-            onViewCreated: (PDFViewController pdfViewController) {
+            onViewCreated: (PDFViewController pdfViewController) async {
               _controller.complete(pdfViewController);
+
+              // Add a slight delay and refresh the page to solve the blank screen issue
+              await Future.delayed(Duration(milliseconds: 100));
+              pdfViewController.setPage(currentPage);
             },
             onLinkHandler: (String? uri) {
               print('goto uri: $uri');

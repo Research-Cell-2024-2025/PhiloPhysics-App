@@ -1,4 +1,3 @@
-import 'package:ephysicsapp/globals/labels.dart';
 import 'package:ephysicsapp/globals/colors.dart';
 import 'package:ephysicsapp/screens/users/studentLogin.dart';
 import 'package:ephysicsapp/services/authentication.dart';
@@ -92,117 +91,136 @@ class AdminLoginForm extends StatefulWidget {
 class _AdminLoginFormState extends State<AdminLoginForm> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
-  final GlobalKey<FormState> _formKeyValue = new GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKeyValue = GlobalKey<FormState>();
 
   bool _isPasswordVisible = false;
   bool isLoading = false;
 
-  checkValidation() async {
+  Future<void> checkValidation() async {
     if (_formKeyValue.currentState!.validate()) {
       setState(() {
         isLoading = true;
       });
-      try {
-        await login(emailController.text, passwordController.text, context);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed! Please Try Again')),
-        );
-      } finally {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      await login(emailController.text, passwordController.text, context);
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 18.0),
       child: Form(
         key: _formKeyValue,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            SizedBox(
-              height: MediaQuery.of(context).size.height / 30,
-            ),
+            SizedBox(height: MediaQuery
+                .of(context)
+                .size
+                .height / 30),
             Text(
-              loginPage,
+              'Admin Login',
               style: GoogleFonts.merriweather(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   fontStyle: FontStyle.italic,
                   color: color5),
             ),
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
             TextFormField(
               controller: emailController,
-              validator: (value) {
-                if (value!.isEmpty) return "Enter Email";
-                return null;
-              },
+              validator: (value) => value!.isEmpty ? "Enter Email" : null,
               keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Enter Email",
                 focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(width: 2.0),
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextFormField(
               controller: passwordController,
-              validator: (value) {
-                if (value!.isEmpty) return "Enter Password";
-                return null;
-              },
+              validator: (value) => value!.isEmpty ? "Enter Password" : null,
               obscureText: !_isPasswordVisible,
               decoration: InputDecoration(
                 labelText: "Enter Password",
-                suffixIcon: Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Row(
-                    mainAxisSize:
-                        MainAxisSize.min, // Use min to avoid extra width
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          _isPasswordVisible
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isPasswordVisible =
-                                !_isPasswordVisible; // Toggle visibility
-                          });
-                        },
-                      ),
-                    ],
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _isPasswordVisible ? Icons.visibility_off : Icons
+                        .visibility,
                   ),
+                  onPressed: () {
+                    setState(() {
+                      _isPasswordVisible = !_isPasswordVisible;
+                    });
+                  },
                 ),
-                focusedBorder: OutlineInputBorder(
+                focusedBorder: const OutlineInputBorder(
                   borderSide: BorderSide(width: 2.0),
                 ),
               ),
             ),
-            SizedBox(height: 30),
-            isLoading == true
+            const SizedBox(height: 30),
+            isLoading
                 ? CircularProgressIndicator()
-                : ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding:
-                EdgeInsets.symmetric(vertical: 10, horizontal: 30),
-                backgroundColor: color5,
+                : Container(
+              height: MediaQuery.of(context).size.height / 16,
+              width : MediaQuery.of(context).size.width - 20.0,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15), // Same border radius
+                  ),
+                  padding:
+                  EdgeInsets.symmetric(vertical: 10, horizontal: 30),
+                  backgroundColor: color5,
+                ),
+                onPressed: () {
+                  checkValidation();
+                },
+                child: Text(
+                  'Login',
+                  style: TextStyle(fontSize: 18, color: color1),
+                ),
               ),
-              onPressed: () {
-                checkValidation();
-              },
-              child: Text(
-                'Login',
-                style: TextStyle(fontSize: 18, color: color1),
+            ),
+            SizedBox(height: MediaQuery.of(context).size.height / 50),
+            Container(
+              height: MediaQuery.of(context).size.height / 16,
+              width : MediaQuery.of(context).size.width - 20.0,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white30,  // White background
+                  foregroundColor: Colors.black,  // Text and icon color
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  elevation: 2,
+                ),
+                onPressed: () => AdminloginWithGoogle(context),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/google_icon.png', // Your Google icon path
+                      width: 30, // You can adjust size
+                      height: 30,
+                    ),
+                    SizedBox(width: 10), // Space between the icon and the text
+                    Text(
+                      'Sign in with Google',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

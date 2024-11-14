@@ -189,10 +189,11 @@ class _AdminStatisticsState extends State<AnnualAdminAppUsageStatistics> {
   List<BarChartGroupData> getSemesterChartData(
       String year, bool isOddSemester) {
     Map<String, int> monthlyUsage = yearlyUsage[year] ?? {};
+
     return List.generate(
-      isOddSemester ? 6 : 5,
-      (index) {
-        int monthIndex = isOddSemester ? index + 5 : index;
+      6, // Always 6 months for each semester
+          (index) {
+        int monthIndex = isOddSemester ? index + 6 : index; // Adjusted here
         double usage = (monthlyUsage[months[monthIndex]] ?? 0) / 60;
         return BarChartGroupData(
           x: monthIndex,
@@ -259,7 +260,6 @@ class _AdminStatisticsState extends State<AnnualAdminAppUsageStatistics> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 24),
                           GraphContainer(
                             year: availableYears[currentYearIndex],
                             maxY: getMaxY(availableYears[currentYearIndex]),
@@ -340,7 +340,7 @@ class GraphContainer extends StatelessWidget {
           ],
         ),
         width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height / 4,
+        height: MediaQuery.of(context).size.height / 3.75,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -352,7 +352,7 @@ class GraphContainer extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 15.0),
+            SizedBox(height: MediaQuery.of(context).size.height / 80),
             Expanded(
               child: BarChart(
                 BarChartData(
@@ -385,7 +385,7 @@ class GraphContainer extends StatelessWidget {
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 50,
+                        reservedSize: 40,
                         interval: yInterval.toDouble(),
                         getTitlesWidget: (value, meta) => Text(
                           formatYAxisLabel(value),

@@ -158,6 +158,7 @@ import 'dart:collection';
 import 'package:ephysicsapp/screens/Admin/adminUserUsageStatistics.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AdminStatistics extends StatefulWidget {
   const AdminStatistics({super.key});
@@ -258,7 +259,7 @@ class _AdminStatisticsState extends State<AdminStatistics> {
                       null),
                   _buildStatBox(
                       Icons.school,
-                      'Unique Colleges',
+                      'Total Colleges',
                       uniqueCollegesCount.toString(),
                       Colors.red,
                       context,
@@ -311,10 +312,10 @@ class _AdminStatisticsState extends State<AdminStatistics> {
               backgroundColor: Colors.white.withOpacity(0.3),
               child: Icon(icon, size: 40, color: Colors.white),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 12),
             Text(
               label,
-              style: const TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
@@ -323,7 +324,7 @@ class _AdminStatisticsState extends State<AdminStatistics> {
             const SizedBox(height: 8),
             Text(
               value,
-              style: const TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,

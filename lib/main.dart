@@ -122,7 +122,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
           59,
         );
 
-        // Duration up to midnight
+        // Duration up to   midnight
         Duration beforeMidnight = midnight.difference(_startTime).abs();
         print("Passing X-day : ${_startTime} and ${beforeMidnight}");
         await _updateUsageInFirebase(_startTime, beforeMidnight);

@@ -62,7 +62,7 @@ class _StudentLoginState extends State<StudentLogin> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8.0),
+        padding: EdgeInsets.symmetric(horizontal: 18.0),
         child: Form(
           key: _formKeyValue,
           child: Column(
@@ -101,7 +101,8 @@ class _StudentLoginState extends State<StudentLogin> {
                   return null;
                 },
                 obscureText: !_isPasswordVisible,
-                decoration: InputDecoration( suffixIcon: Padding(
+                decoration: InputDecoration(
+                  suffixIcon: Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: Row(
                     mainAxisSize: MainAxisSize.min, // Use min to avoid extra width
@@ -129,22 +130,63 @@ class _StudentLoginState extends State<StudentLogin> {
 
               isLoading
                   ? CircularProgressIndicator()
-                  : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding:
-                            EdgeInsets.symmetric(vertical: 10, horizontal: 30),
-                        backgroundColor: color5,
+                  : Container(
+                    height: MediaQuery.of(context).size.height / 16,
+                    width : MediaQuery.of(context).size.width - 20.0,
+                    child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15), // Same border radius
+                          ),
+                          padding:
+                              EdgeInsets.symmetric(vertical: 10, horizontal: 30),
+                          backgroundColor: color5,
+                        ),
+                        onPressed: () {
+                          checkValidation();
+                        },
+                        child: Text(
+                          'Login',
+                          style: TextStyle(fontSize: 18, color: color1),
+                        ),
                       ),
-                      onPressed: () {
-                        checkValidation();
-                      },
-                      child: Text(
-                        'Login',
-                        style: TextStyle(fontSize: 18, color: color1),
-                      ),
+                  ),
+              SizedBox(height: MediaQuery.of(context).size.height / 50),
+              Container(
+                height: MediaQuery.of(context).size.height / 16,
+                width : MediaQuery.of(context).size.width - 20.0,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white30,  // White background
+                    foregroundColor: Colors.black,  // Text and icon color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
                     ),
+                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                    elevation: 2,
+                  ),
+                  onPressed: () => studentLoginWithGoogle(context),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/google_icon.png', // Your Google icon path
+                        width: 30, // You can adjust size
+                        height: 30,
+                      ),
+                      SizedBox(width: 10), // Space between the icon and the text
+                      Text(
+                        'Sign in with Google',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               SizedBox(height: MediaQuery.of(context).size.height / 100),
-
               // Forgot Password Button
               TextButton(
                 onPressed: () {

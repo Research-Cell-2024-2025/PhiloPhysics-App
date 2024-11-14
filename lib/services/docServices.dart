@@ -80,19 +80,6 @@ Future<void> addVideo({
   }
 }
 
-// Helper function to convert YouTube link
-String _convertYouTubeLink(String link) {
-  // Check if it's a shortened YouTube URL
-  if (link.contains("youtu.be")) {
-    // Extract the video ID from the shortened URL
-    var uri = Uri.parse(link);
-    String videoID = uri.pathSegments.last;
-    // Construct the full YouTube URL
-    return "https://www.youtube.com/watch?v=$videoID";
-  }
-  // Return the original link if it's not a shortened URL
-  return link;
-}
 
 deleteDoc(
     {required String docID,
@@ -114,18 +101,23 @@ deleteDoc(
 }
 
 Future<void> openFile(String url, BuildContext context, String title) async {
-  // ProgressDialog _progressDialog = ProgressDialog();
-  // _progressDialog.showProgressDialog(
-  //   context,textToBeDisplayed: 'Opening...',
-  //
-  //   dismissAfter: Duration(seconds: 5));
+  // Show a loading dialog while downloading
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Center(child: CircularProgressIndicator());
+    },
+  );
 
-  String remotePDFpath = "";
+  // Start downloading the PDF file in the background
   createFileOfPdfUrl(url).then((f) {
-    remotePDFpath = f.path;
+    String remotePDFpath = f.path;
 
-    if (remotePDFpath != null || remotePDFpath.isNotEmpty) {
-      //  _progressDialog.dismissProgressDialog(context);
+    // Dismiss the loading dialog after the file is downloaded
+    Navigator.of(context, rootNavigator: true).pop();
+
+    // Navigate to the PDF screen once the file is ready
+    if (remotePDFpath.isNotEmpty) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -136,8 +128,15 @@ Future<void> openFile(String url, BuildContext context, String title) async {
         ),
       );
     }
+  }).catchError((e) {
+    Navigator.of(context, rootNavigator: true).pop(); // Dismiss loading on error
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('Error downloading PDF. Please try again later.'),
+    ));
   });
 }
+
+
 
 Future<File> createFileOfPdfUrl(String pdfUrl) async {
   Completer<File> completer = Completer();
@@ -203,58 +202,3 @@ Future<File> createFileOfPdfUrl(String pdfUrl) async {
 // }
 
 
-
-Future<void> addDriveVideo({
-  required String section,
-  required String moduleID,
-  required String docName,
-  required String driveLink,
-  required String thumbnailLink,
-  required BuildContext context,
-}) async {
-  var uuid = Uuid();
-  String uniqueID = uuid.v1();
-
-  try {
-    // Extract the Google Drive file ID from the link
-    String fileID = extractDriveFileID(driveLink);
-    if (fileID.isEmpty) {
-      showToast("Invalid Google Drive Link");
-      return;
-    }
-
-    // Convert the Google Drive link to a downloadable format
-    String formattedLink = "https://drive.google.com/uc?export=download&id=$fileID";
-
-    final databaseReference = FirebaseDatabase.instance.ref();
-    await databaseReference
-        .child(section)
-        .child(moduleID)
-        .child("videos")
-        .child(uniqueID)
-        .set({
-      "videoName": docName,
-      "docID": uniqueID,
-      "videoDownloadUrl": formattedLink,
-      "thumbnailDownloadUrl": thumbnailLink,
-    });
-
-    print(formattedLink);
-    showToast("Google Drive Video Added Successfully");
-    Navigator.pop(context);
-  } catch (e) {
-    print(e);
-    showToast("Failed to add video");
-  }
-}
-
-// Helper function to extract file ID from Google Drive link
-String extractDriveFileID(String link) {
-  final regex = RegExp(r'\/d\/(.*?)\/');
-  final match = regex.firstMatch(link);
-  if (match != null) {
-    final fileID = match.group(1);
-    return 'https://drive.google.com/uc?export=download&id=$fileID';
-  }
-  return '';
-}

@@ -403,65 +403,97 @@ class VideosListPage extends StatelessWidget {
     required String section,
     required String moduleID,
   }) {
-    return GestureDetector(
-      onTap: () {
-        navigateToVideoDetailPage(context, videoDetails);
-      },
-      child: Container(
-        margin: EdgeInsets.fromLTRB(10, 7, 10, 7),
-        child: Card(
-          shadowColor: Colors.black,
-          elevation: 3,
-          color: color1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Thumbnail image
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  height: MediaQuery.of(context).size.height / 5,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black, width: 2.5),
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(10)),
-                    image: DecorationImage(
-                      image: NetworkImage(
-                          videoDetails['thumbnailDownloadUrl'] ?? ''),
-                      fit: BoxFit.cover,
-                    ),
+    return Container(
+      margin: EdgeInsets.fromLTRB(10, 7, 10, 7),
+      child: Card(
+        shadowColor: Colors.black,
+        elevation: 3,
+        color: color1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Thumbnail image
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                height: MediaQuery.of(context).size.height / 5,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black, width: 2.5),
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(10)),
+                  image: DecorationImage(
+                    image: NetworkImage(
+                        videoDetails['thumbnailDownloadUrl'] ?? ''),
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
-              // Video title
-              Padding(
-                padding: const EdgeInsets.only(left: 8.0, top: 5.0),
-                child: Text(
-                  videoDetails['videoName'] ?? 'No Name',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: color5,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18.5,
-                  ),
+            ),
+            // Video title
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0, top: 5.0),
+              child: Text(
+                videoDetails['videoName'] ?? 'No Name',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: color5,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18.5,
                 ),
               ),
-              // Icon button to navigate to the video details page
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  icon: Icon(Icons.play_arrow, color: color5, size: 30.0),
-                  onPressed: () {
-                    navigateToVideoDetailPage(context, videoDetails);
-                  },
-                ),
+            ),
+            // Icon button to navigate to the video details page
+            Align(
+              alignment: Alignment.topRight,
+              child: IconButton(
+                icon: Icon(Icons.play_arrow, color: color5, size: 30.0),
+                onPressed: () async {
+                  // Retrieve the studentUUID from SharedPreferences
+                  String? studentUUID = prefs.getString('studentUUID');
+                  if (studentUUID != null) {
+                    print("Studnet id not null, ${studentUUID}");
+                    // Reference to the Realtime Database
+                    DatabaseReference dbRef = FirebaseDatabase.instance.ref();
+
+                    // Fetch the current videosViewed count for the specific student
+                    DatabaseEvent event = await dbRef
+                        .child('Users')
+                        .child(studentUUID)
+                        .child('videosViewed')
+                        .once();
+                    DataSnapshot snapshot = event
+                        .snapshot; // Get the snapshot from the DatabaseEvent
+
+                    if (snapshot.exists) {
+                      // Get the current videosViewed count and increment it
+                      int currentViewCount = snapshot.value as int;
+                      await dbRef
+                          .child('Users')
+                          .child(studentUUID)
+                          .update({'videosViewed': currentViewCount + 1});
+                      print("Incremented in User Videos");
+                    } else {
+                      // If the videosViewed does not exist, initialize it to 1
+                      await dbRef
+                          .child('Users')
+                          .child(studentUUID)
+                          .child('videosViewed')
+                          .set(1);
+                      print("Init in User Video");
+                    }
+                  } else {
+                    // Handle the case when studentUUID is not found
+                    showToast("User not logged in.");
+                  }
+                  navigateToVideoDetailPage(context, videoDetails);
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
