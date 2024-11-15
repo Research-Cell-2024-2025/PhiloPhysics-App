@@ -306,38 +306,23 @@ class _AdminStatisticsState extends State<AdminStatistics> {
                 .of(context)
                 .size
                 .width / 4,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AutoSizeText(
-                  'Study',
-                  maxLines: 1,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+            child: Padding(
+              padding: EdgeInsets.only(left: MediaQuery.of(context).size.width / 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AutoSizeText(
+                    'Study Material Usage',
+                    maxLines: 3,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
-                AutoSizeText(
-                  'Material',
-                  maxLines: 1,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                AutoSizeText(
-                  'Usage',
-                  maxLines: 1,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -350,7 +335,7 @@ class _AdminStatisticsState extends State<AdminStatistics> {
                   padding: EdgeInsets.only(bottom: MediaQuery
                       .of(context)
                       .size
-                      .height / 120),
+                      .height / 180),
                   child: CircularPercentIndicator(
                     radius: MediaQuery
                         .of(context)
@@ -376,24 +361,16 @@ class _AdminStatisticsState extends State<AdminStatistics> {
                 SizedBox(height: MediaQuery
                     .of(context)
                     .size
-                    .height / 500),
+                    .height / 2000),
                 Column(
                   children: [
-                    // AutoSizeText(
-                    //   'Materials Used',
-                    //   maxLines: 1,
-                    //   style: GoogleFonts.poppins(
-                    //     fontSize: 13,
-                    //     fontWeight: FontWeight.w600,
-                    //     color: Colors.black87,
-                    //   ),
-                    // ),
                     AutoSizeText(
                       'Matrerial Used by Students',
                       textAlign: TextAlign.center,
                       maxLines: 2,
+                      softWrap: true,
                       style: GoogleFonts.poppins(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
                       ),
