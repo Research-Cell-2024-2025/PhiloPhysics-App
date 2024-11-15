@@ -175,7 +175,7 @@ class _AdminStatisticsState extends State<AdminStatistics> {
                 SizedBox(height: 20),
                 GridView.count(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 20.0,
+                  crossAxisSpacing: 25.0,
                   mainAxisSpacing: 20.0,
                   childAspectRatio: 1.1,
                   shrinkWrap: true,
