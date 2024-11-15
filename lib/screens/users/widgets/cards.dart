@@ -4,7 +4,6 @@ import 'package:ephysicsapp/screens/Admin/videosPage.dart';
 import 'package:ephysicsapp/services/authentication.dart';
 import 'package:ephysicsapp/services/docServices.dart';
 import 'package:ephysicsapp/widgets/webDisplay.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
 import '../../../widgets/popUps.dart';
@@ -72,28 +71,28 @@ Widget docUserCard({
   Map? docDetails,
   String? section,
   String? moduleID,
-  BuildContext? context,}) {
+  BuildContext? context,
+}) {
   return Container(
-      margin: EdgeInsets.fromLTRB(10, 7, 10, 7),
-       child:Card(
-        elevation: 3,
-        color:  color1,
-          shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.horizontal(right: Radius.circular(100)),
-    ),
+    margin: EdgeInsets.fromLTRB(10, 7, 10, 7),
+    child: Card(
+      elevation: 3,
+      color: color1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(100)),
+      ),
       child: ListTile(
-      
         contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
         leading: Container(
           padding: EdgeInsets.only(right: 12.0),
-          decoration: new BoxDecoration(
-              border:
-                  new Border(right: new BorderSide(width: 1.0, color: color5))),
+          decoration: BoxDecoration(
+            border: Border(right: BorderSide(width: 1.0, color: color5)),
+          ),
           child: Icon(Icons.note, color: color5),
         ),
         title: Text(
           docDetails!["docName"].toString(),
-           overflow: TextOverflow.visible,
+          overflow: TextOverflow.visible,
           style: TextStyle(
             color: color5,
             fontWeight: FontWeight.bold,
@@ -101,43 +100,24 @@ Widget docUserCard({
           ),
         ),
         trailing: Icon(Icons.keyboard_arrow_right, color: color5, size: 30.0),
-          onTap: () async {
-            print(docDetails);
-
-            // Retrieve the studentUUID from SharedPreferences
-            String? studentUUID = prefs.getString('studentUUID');
-
-            if (studentUUID != null) {
-              // Reference to the Realtime Database
-              DatabaseReference dbRef = FirebaseDatabase.instance.ref();
-
-              // Fetch the current pdfView count for the specific student
-              DatabaseEvent event = await dbRef.child('Users').child(studentUUID).child('pdfView').once();
-              DataSnapshot snapshot = event.snapshot; // Get the snapshot from the DatabaseEvent
-
-              if (snapshot.exists) {
-                // Get the current pdfView count and increment it
-                int currentViewCount = snapshot.value as int;
-                await dbRef.child('Users').child(studentUUID).update({
-                  'pdfsViewed': currentViewCount + 1
-                });
-                print("Incremented in User");
-              } else {
-                // If the pdfView does not exist, initialize it to 1
-                await dbRef.child('Users').child(studentUUID).child('pdfsViewed').set(1);
-                print("Init Liazed in User");
-              }
-
-              // Open the file after updating the view count
-              openFile(docDetails["downloadUrl"], context!, docDetails["docName"]);
-            } else {
-              // Handle the case when studentUUID is not found
-              showToast("User not logged in.");
-            }
+        onTap: () async {
+          // Open the PDF first
+          if (docDetails["downloadUrl"] != null && context != null) {
+            openFile(docDetails["downloadUrl"], context, docDetails["docName"]);
           }
-      )));
-}
 
+          // Increment the view count in the background
+          String? studentUUID = prefs.getString('studentUUID');
+          if (studentUUID != null) {
+            incrementPDFViewCount(studentUUID);
+          } else {
+            showToast("User not logged in.");
+          }
+        },
+      ),
+    ),
+  );
+}
 
 // widget video card
 

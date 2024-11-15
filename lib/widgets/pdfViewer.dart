@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:ephysicsapp/globals/colors.dart';
+import 'package:ephysicsapp/services/authentication.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:no_screenshot/no_screenshot.dart';
 
 class PDFScreen extends StatefulWidget {
@@ -20,18 +23,103 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
   bool isReady = false;
   String errorMessage = '';
 
+  // pdf time storinng :
+  late DateTime pdfTimeStart;
+  Duration totalPdfUsedDuration = Duration();
+
+  String? userId = prefs.getString('studentUUID');
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     NoScreenshot.instance.screenshotOff();
+    pdfTimeStart = DateTime.now();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     NoScreenshot.instance.screenshotOn(); // Allow screenshots when disposing.
+
+    // pdf time calc and setting in db:
+    DateTime pdfTimeEnd = DateTime.now();
+    if (pdfTimeStart != null) {
+      _logPdfUsageTime(pdfTimeStart!, DateTime.now());
+    }
     super.dispose();
+  }
+
+  Future<void> _logPdfUsageTime(DateTime startTime, DateTime endTime) async {
+    print("PDF TIme Saving Start");
+    if (userId != null) {
+      if (startTime.day == endTime.day) {
+        // Simple case, same day session
+        Duration sessionDuration = endTime.difference(startTime);
+        print("Logging same day PDF usage from $startTime to $endTime");
+        await _updatePdfUsageInFirebase(startTime, sessionDuration);
+      } else {
+        // Spans across midnight
+        print("PDF usage spanned across midnight from $startTime to $endTime");
+        DateTime midnight = DateTime(
+          startTime.year,
+          startTime.month,
+          startTime.day,
+          23,
+          59,
+          59,
+        );
+
+        // Duration up to midnight
+        Duration beforeMidnight = midnight.difference(startTime).abs();
+        print("Logging X-day usage: $startTime to midnight ($beforeMidnight)");
+        await _updatePdfUsageInFirebase(startTime, beforeMidnight);
+
+        // Duration from midnight to end time
+        DateTime nextDayStart = midnight.add(Duration(seconds: 1));
+        Duration afterMidnight = endTime.difference(nextDayStart);
+        print("Logging (X+1)-day usage: $nextDayStart to $endTime ($afterMidnight)");
+        await _updatePdfUsageInFirebase(nextDayStart, afterMidnight);
+      }
+    }
+  }
+
+  Future<void> _updatePdfUsageInFirebase(DateTime usageDate, Duration sessionDuration) async {
+    String currentMonth = DateFormat('MMM yyyy').format(usageDate);
+    String dateKey = DateFormat('dd-MM-yyyy').format(usageDate);
+
+    DatabaseReference dbRef = FirebaseDatabase.instance.ref();
+    DatabaseReference userUsageRef = dbRef.child('Users').child(userId!).child('PdfUsage').child(currentMonth).child(dateKey);
+
+    DataSnapshot snapshot = await userUsageRef.once().then((event) => event.snapshot);
+    Duration totalUsage = Duration();
+
+    if (snapshot.exists) {
+      totalUsage = _parseDuration(snapshot.value as String);
+      print("Existing PDF usage for $dateKey: ${_formatDuration(totalUsage)}");
+    } else {
+      print("No existing PDF usage found for $dateKey. Creating new entry.");
+    }
+
+    totalUsage += sessionDuration;
+    String formattedUsage = _formatDuration(totalUsage);
+
+    print("Total PDF usage for $dateKey updated: $formattedUsage");
+    await userUsageRef.set(formattedUsage);
+  }
+
+  Duration _parseDuration(String durationStr) {
+    List<String> parts = durationStr.split(':');
+    return Duration(
+      hours: int.parse(parts[0]),
+      minutes: int.parse(parts[1]),
+      seconds: int.parse(parts[2]),
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    return "${twoDigits(duration.inHours)}:${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}";
   }
 
   // Function to go to the previous page

@@ -13,7 +13,6 @@ import 'package:flutter/material.dart';
    return GestureDetector(
      onTap: () {
        print("Pdf tapped by admin");
-       // Start downloading the PDF in the background and navigate to the PDF screen
        openFile(docDetails["downloadUrl"], context, docDetails["docName"]);
      },
      child: Container(

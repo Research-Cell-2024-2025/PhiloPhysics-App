@@ -202,3 +202,30 @@ Future<File> createFileOfPdfUrl(String pdfUrl) async {
 // }
 
 
+// Student PDF Views Increment
+Future<void> incrementPDFViewCount(String studentUUID) async {
+  try {
+    DatabaseReference dbRef = FirebaseDatabase.instance.ref();
+    DatabaseEvent event =
+    await dbRef.child('Users').child(studentUUID).child('pdfsViewed').once();
+
+    DataSnapshot snapshot = event.snapshot;
+    if (snapshot.exists) {
+      print("PDF Count Exists");
+      int currentViewCount = snapshot.value as int;
+      await dbRef.child('Users').child(studentUUID).update({
+        'pdfsViewed': currentViewCount + 1,
+      });
+      print("Incremented in User");
+    } else {
+      await dbRef
+          .child('Users')
+          .child(studentUUID)
+          .child('pdfsViewed')
+          .set(1);
+      print("Initialized in User");
+    }
+  } catch (e) {
+    print("Error incrementing PDF view count: $e");
+  }
+}

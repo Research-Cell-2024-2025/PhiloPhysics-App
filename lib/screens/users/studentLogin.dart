@@ -221,8 +221,9 @@ class _StudentLoginState extends State<StudentLogin> {
                       );
                     },
                     child: Text(
-                      'Create Account',
+                      'REGISTER',
                       style: TextStyle(
+                          decoration: TextDecoration.underline,
                           color: color5,
                           fontSize: 16,
                           fontWeight: FontWeight.bold),
