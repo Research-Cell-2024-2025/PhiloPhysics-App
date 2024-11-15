@@ -3,6 +3,7 @@ import 'package:ephysicsapp/globals/colors.dart';
 import 'package:ephysicsapp/services/authentication.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -11,17 +12,20 @@ import 'package:no_screenshot/no_screenshot.dart';
 class PDFScreen extends StatefulWidget {
   final String path, title;
 
-  PDFScreen({Key? key, required this.path, required this.title}) : super(key: key);
+  PDFScreen({Key? key, required this.path, required this.title})
+      : super(key: key);
 
   _PDFScreenState createState() => _PDFScreenState();
 }
 
 class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
-  final Completer<PDFViewController> _controller = Completer<PDFViewController>();
+  final Completer<PDFViewController> _controller =
+      Completer<PDFViewController>();
   int pages = 0;
   int currentPage = 0;
   bool isReady = false;
   String errorMessage = '';
+  bool isLandscape = false;
 
   // pdf time storinng :
   late DateTime pdfTimeStart;
@@ -35,12 +39,26 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     NoScreenshot.instance.screenshotOff();
     pdfTimeStart = DateTime.now();
+
+    // Allow all orientations for this screen
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     NoScreenshot.instance.screenshotOn(); // Allow screenshots when disposing.
+
+    // Reset orientation back to portrait only when leaving this screen
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
 
     // pdf time calc and setting in db:
     DateTime pdfTimeEnd = DateTime.now();
@@ -78,20 +96,28 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
         // Duration from midnight to end time
         DateTime nextDayStart = midnight.add(Duration(seconds: 1));
         Duration afterMidnight = endTime.difference(nextDayStart);
-        print("Logging (X+1)-day usage: $nextDayStart to $endTime ($afterMidnight)");
+        print(
+            "Logging (X+1)-day usage: $nextDayStart to $endTime ($afterMidnight)");
         await _updatePdfUsageInFirebase(nextDayStart, afterMidnight);
       }
     }
   }
 
-  Future<void> _updatePdfUsageInFirebase(DateTime usageDate, Duration sessionDuration) async {
+  Future<void> _updatePdfUsageInFirebase(
+      DateTime usageDate, Duration sessionDuration) async {
     String currentMonth = DateFormat('MMM yyyy').format(usageDate);
     String dateKey = DateFormat('dd-MM-yyyy').format(usageDate);
 
     DatabaseReference dbRef = FirebaseDatabase.instance.ref();
-    DatabaseReference userUsageRef = dbRef.child('Users').child(userId!).child('PdfUsage').child(currentMonth).child(dateKey);
+    DatabaseReference userUsageRef = dbRef
+        .child('Users')
+        .child(userId!)
+        .child('PdfUsage')
+        .child(currentMonth)
+        .child(dateKey);
 
-    DataSnapshot snapshot = await userUsageRef.once().then((event) => event.snapshot);
+    DataSnapshot snapshot =
+        await userUsageRef.once().then((event) => event.snapshot);
     Duration totalUsage = Duration();
 
     if (snapshot.exists) {
@@ -146,6 +172,24 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
     }
   }
 
+  // Toggle orientation between landscape and portrait
+  void toggleOrientation() {
+    setState(() {
+      isLandscape = !isLandscape;
+      if (isLandscape) {
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+      } else {
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+        ]);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -154,28 +198,45 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
         actions: [
           // Row for positioning the arrows
           Padding(
-            padding: EdgeInsets.only(right: MediaQuery.of(context).size.width / 50),
+            padding:
+                EdgeInsets.only(right: MediaQuery.of(context).size.width / 50),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,  // Align buttons to the right
+              mainAxisAlignment:
+                  MainAxisAlignment.end, // Align buttons to the right
               children: [
                 // Left arrow button (previous page)
                 IconButton(
+                  icon: Icon(FontAwesomeIcons.rotate), // Rotate icon
+                  onPressed: toggleOrientation,
+                  iconSize: 18,
+                ),
+                IconButton(
                   icon: Icon(
-                    Icons.arrow_back_rounded,  // Arrow for page back
-                    color: currentPage == 0 ? Colors.grey : Colors.black,  // Disable when on the first page
+                    Icons.arrow_back_rounded, // Arrow for page back
+                    color: currentPage == 0
+                        ? Colors.grey
+                        : Colors.black, // Disable when on the first page
                   ),
-                  onPressed: currentPage == 0 ? null : goToPreviousPage,  // Disable action when on the first page
+                  onPressed: currentPage == 0
+                      ? null
+                      : goToPreviousPage, // Disable action when on the first page
                 ),
 
                 // Add some spacing between the arrows
-                SizedBox(width: MediaQuery.of(context).size.width / 300),  // You can adjust the width to control the gap
+                SizedBox(
+                    width: MediaQuery.of(context).size.width /
+                        300), // You can adjust the width to control the gap
                 // Right arrow button (next page)
                 IconButton(
                   icon: Icon(
-                    Icons.arrow_forward_rounded,  // Arrow for page forward
-                    color: currentPage == pages - 1 || pages == 1 ? Colors.grey : Colors.black,  // Disable when on the last page
+                    Icons.arrow_forward_rounded, // Arrow for page forward
+                    color: currentPage == pages - 1 || pages == 1
+                        ? Colors.grey
+                        : Colors.black, // Disable when on the last page
                   ),
-                  onPressed: currentPage == pages - 1 || pages == 1 ? null : goToNextPage,  // Disable action when on the last page
+                  onPressed: currentPage == pages - 1 || pages == 1
+                      ? null
+                      : goToNextPage, // Disable action when on the last page
                 ),
               ],
             ),
@@ -232,13 +293,13 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
           ),
           errorMessage.isEmpty
               ? !isReady
-              ? Center(
-            child: CircularProgressIndicator(),
-          )
-              : Container()
+                  ? Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : Container()
               : Center(
-            child: Text(errorMessage),
-          )
+                  child: Text(errorMessage),
+                )
         ],
       ),
       floatingActionButton: FutureBuilder<PDFViewController>(
@@ -257,7 +318,6 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
               },
             );
           }
-
           return Container();
         },
       ),

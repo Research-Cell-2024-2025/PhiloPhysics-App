@@ -192,7 +192,7 @@ class _AdminStatisticsState extends State<AnnualAdminAppUsageStatistics> {
 
     return List.generate(
       6, // Always 6 months for each semester
-          (index) {
+      (index) {
         int monthIndex = isOddSemester ? index + 6 : index; // Adjusted here
         double usage = (monthlyUsage[months[monthIndex]] ?? 0) / 60;
         return BarChartGroupData(
@@ -340,16 +340,19 @@ class GraphContainer extends StatelessWidget {
           ],
         ),
         width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height / 3.75,
+        height: MediaQuery.of(context).size.height / 3.5,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: Colors.black87,
-                fontWeight: FontWeight.w600,
+            Padding(
+              padding: EdgeInsets.only(bottom: 5.0),
+              child: Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             SizedBox(height: MediaQuery.of(context).size.height / 80),
@@ -450,13 +453,8 @@ class GraphContainer extends StatelessWidget {
   }
 
   String formatYAxisLabel(double value) {
-    if (value >= 60) {
-      int hours = value ~/ 60;
-      int minutes = (value % 60).toInt();
-      return minutes > 0 ? '${hours}h ${minutes}m' : '${hours}h';
-    } else {
-      return '${value.toInt()}m';
-    }
+    double hours = value / 60;
+    return '${hours.toStringAsFixed(1)}h'; // Display hours with one decimal
   }
 
   String formatSeconds(double totalSeconds) {

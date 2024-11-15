@@ -258,8 +258,8 @@ class GraphContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-      padding: const EdgeInsets.all(16.0),
+      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -314,11 +314,11 @@ class GraphContainer extends StatelessWidget {
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 30,
+                      reservedSize: 50,
                       interval: yInterval.toDouble(),
                       getTitlesWidget: (value, meta) {
                         return Text(
-                          '${value.toInt()}m',
+                          formatYAxisLabel(value),
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             color: Colors.black87,
@@ -389,4 +389,10 @@ class GraphContainer extends StatelessWidget {
       ),
     );
   }
+}
+
+// Function to format the Y-axis labels in hours
+String formatYAxisLabel(double value) {
+  double hours = value / 60;
+  return '${hours.toStringAsFixed(1)}h'; // Display hours with one decimal
 }

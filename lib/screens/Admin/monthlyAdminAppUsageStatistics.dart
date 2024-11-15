@@ -34,8 +34,6 @@ class _MonthlyAdminAppUsageStatisticsState
     'Dec'
   ];
 
-
-
   @override
   void initState() {
     super.initState();
@@ -391,9 +389,7 @@ class GraphContainer extends StatelessWidget {
   }
 
   String formatYAxisLabel(double value) {
-    int totalSeconds = (value * 60).round();
-    int minutes = totalSeconds ~/ 60;
-    int seconds = totalSeconds % 60;
-    return seconds == 0 ? '${minutes}m' : '${minutes}m ${seconds}s';
+    double hours = value / 60;
+    return '${hours.toStringAsFixed(1)}h'; // Display hours with one decimal
   }
 }
