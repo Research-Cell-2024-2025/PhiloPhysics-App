@@ -94,38 +94,50 @@ Future<void> login(String email, String password, BuildContext context) async {
   }
 }
 
+
 Future<void> Studentregister(
-  String email,
-  String name,
-  String classdiv,
-  String password,
-  String collegeName,
-  BuildContext context,
-) async {
+    String email,
+    String name,
+    String classdiv,
+    String password,
+    String collegeName,
+    BuildContext context,
+    ) async {
   try {
+    print("Registration Init");
     FirebaseAuth _auth = FirebaseAuth.instance;
     GoogleSignIn googleSignIn = GoogleSignIn();
 
+    // Check if there's a signed-in Google account
+    GoogleSignInAccount? currentUser = googleSignIn.currentUser;
+
+    // Sign out if there's a user signed in
+    if (currentUser != null) {
+      print("Has currentUser ${currentUser}");
+      await googleSignIn.signOut();
+      await googleSignIn.disconnect();
+    }
+    else
+      {
+        print("No currentUser");
+      }
+
+    // Attempt to sign in with Google, prompting the account picker
+    GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
     // Start creating user with email and password
-    final userCreation = _auth.createUserWithEmailAndPassword(
+    final userCreation = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
 
-    // Always prompt the user to choose a Google account
-    GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-
-    // Await user creation result
-    final result = await userCreation;
-
-    if (result != null) {
-      // Save user details to the Realtime Database
+    if (userCreation != null) {
       final dbRef = FirebaseDatabase.instance.ref();
 
+      // If Google account was selected, link it with the Firebase Authentication user
       if (googleUser != null) {
-        // Get Google authentication details
         final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
+        await googleUser.authentication;
 
         OAuthCredential googleCredential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
@@ -134,24 +146,21 @@ Future<void> Studentregister(
 
         // Check if the Google account email matches the provided email
         if (googleUser.email.toLowerCase() != email.toLowerCase()) {
+          print("The Google account email does not match the provided email.");
           Fluttertoast.showToast(
-            msg: "The Google account email does not match the provided email.",
+            msg: "The Google account email does not match the provided email. Please try again.",
             timeInSecForIosWeb: 4,
           );
 
-          // Disconnect the Google account to force the account selection prompt next time
+          // Instead of deleting the account, just sign out the user
+          await userCreation.user!.delete();
           await googleSignIn.disconnect();
-          await googleSignIn.signOut();
-
-          // Delete the Firebase account created with email/password
-          await result.user!.delete();
           await _auth.signOut();
-          Navigator.pop(context);
           return;
         }
 
         // Link Google account with the Firebase Authentication user
-        await result.user!.linkWithCredential(googleCredential);
+        await userCreation.user!.linkWithCredential(googleCredential);
         print("Account linked with Google successfully");
 
         // Show a success message for Google linking
@@ -162,13 +171,13 @@ Future<void> Studentregister(
       } else {
         // Show a success message for email/password registration only
         Fluttertoast.showToast(
-          msg: "User Account Created Successfully",
+          msg: "User Account Created Successfully with Email/Password",
           timeInSecForIosWeb: 4,
         );
       }
 
       // Save user details to the Realtime Database
-      await dbRef.child('Users').child(result.user!.uid).set({
+      await dbRef.child('Users').child(userCreation.user!.uid).set({
         'name': name,
         'classDiv': classdiv,
         'college': collegeName,
@@ -194,6 +203,8 @@ Future<void> Studentregister(
     FirebaseAuth.instance.signOut();
   }
 }
+
+
 
 // Optimized Student login method
 Future<void> studentLogin(
@@ -401,7 +412,7 @@ Future<void> studentLoginWithGoogle(BuildContext context) async {
   } catch (e) {
     print("Error in studentLoginWithGoogle: ${e.toString()}");
     Fluttertoast.showToast(
-        msg: "Login failed: ${e.toString()}", timeInSecForIosWeb: 4);
+        msg: "Login failed ", timeInSecForIosWeb: 4);
 
     // Clear cached Google account to allow re-selection
     GoogleSignIn googleSignIn = GoogleSignIn();
