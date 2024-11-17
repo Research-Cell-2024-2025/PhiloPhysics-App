@@ -29,14 +29,16 @@ Future<void> login(String email, String password, BuildContext context) async {
     if (result.user != null) {
       print("User Exists");
       final String userId = result.user!.uid;
-      final DatabaseReference dbRef = FirebaseDatabase.instance.ref().child('Users').child(userId);
+      final DatabaseReference dbRef =
+          FirebaseDatabase.instance.ref().child('Users').child(userId);
 
       // Fetch user data from 'Users' node
       final DataSnapshot snapshot = await dbRef.get();
 
       // Check if snapshot exists and extract the role
       if (snapshot.exists) {
-        final Map<dynamic, dynamic> userData = snapshot.value as Map<dynamic, dynamic>;
+        final Map<dynamic, dynamic> userData =
+            snapshot.value as Map<dynamic, dynamic>;
         final String role = userData['role'] ?? '';
 
         // If role is not 'Student', log in as admin
@@ -53,7 +55,7 @@ Future<void> login(String email, String password, BuildContext context) async {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => MyHomePage()),
-                (Route<dynamic> route) => false,
+            (Route<dynamic> route) => false,
           );
         } else {
           // User is a student; show toast and sign out
@@ -81,25 +83,25 @@ Future<void> login(String email, String password, BuildContext context) async {
     if (e.code == 'user-not-found' || e.code == 'wrong-password') {
       Fluttertoast.showToast(msg: "Invalid Credentials", timeInSecForIosWeb: 4);
     } else {
-      Fluttertoast.showToast(msg: "Login Failed: ${e.message}", timeInSecForIosWeb: 4);
+      Fluttertoast.showToast(
+          msg: "Login Failed: ${e.message}", timeInSecForIosWeb: 4);
     }
   } catch (e) {
     // Handle any other errors
     print('Error: $e');
-    Fluttertoast.showToast(msg: "An error occurred. Please try again.", timeInSecForIosWeb: 4);
+    Fluttertoast.showToast(
+        msg: "An error occurred. Please try again.", timeInSecForIosWeb: 4);
   }
 }
 
-
-
 Future<void> Studentregister(
-    String email,
-    String name,
-    String classdiv,
-    String password,
-    String collegeName,
-    BuildContext context,
-    ) async {
+  String email,
+  String name,
+  String classdiv,
+  String password,
+  String collegeName,
+  BuildContext context,
+) async {
   try {
     FirebaseAuth _auth = FirebaseAuth.instance;
     GoogleSignIn googleSignIn = GoogleSignIn();
@@ -110,13 +112,8 @@ Future<void> Studentregister(
       password: password,
     );
 
-    // Attempt silent Google sign-in
-    GoogleSignInAccount? googleUser = await googleSignIn.signInSilently();
-
-    // If silent sign-in fails, prompt the user to choose a Google account
-    if (googleUser == null) {
-      googleUser = await googleSignIn.signIn();
-    }
+    // Always prompt the user to choose a Google account
+    GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
     // Await user creation result
     final result = await userCreation;
@@ -128,7 +125,7 @@ Future<void> Studentregister(
       if (googleUser != null) {
         // Get Google authentication details
         final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
+            await googleUser.authentication;
 
         OAuthCredential googleCredential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
@@ -138,14 +135,18 @@ Future<void> Studentregister(
         // Check if the Google account email matches the provided email
         if (googleUser.email.toLowerCase() != email.toLowerCase()) {
           Fluttertoast.showToast(
-            msg:
-            "The Google account email does not match the provided email.",
+            msg: "The Google account email does not match the provided email.",
             timeInSecForIosWeb: 4,
           );
+
+          // Disconnect the Google account to force the account selection prompt next time
+          await googleSignIn.disconnect();
+          await googleSignIn.signOut();
 
           // Delete the Firebase account created with email/password
           await result.user!.delete();
           await _auth.signOut();
+          Navigator.pop(context);
           return;
         }
 
@@ -185,23 +186,26 @@ Future<void> Studentregister(
       msg: "Error in registration: ${e.toString()}",
       timeInSecForIosWeb: 4,
     );
+
+    // Ensure user is fully signed out on error to prevent cached accounts
+    GoogleSignIn googleSignIn = GoogleSignIn();
+    await googleSignIn.disconnect();
+    await googleSignIn.signOut();
+    FirebaseAuth.instance.signOut();
   }
 }
 
-
-
-
-
-
 // Optimized Student login method
-Future<void> studentLogin(String email, String password, BuildContext context) async {
+Future<void> studentLogin(
+    String email, String password, BuildContext context) async {
   try {
     print("Student login begins");
     FirebaseAuth _auth = FirebaseAuth.instance;
     DatabaseReference dbRef = FirebaseDatabase.instance.ref();
 
     // Start Firebase Authentication login
-    final signInFuture = _auth.signInWithEmailAndPassword(email: email, password: password);
+    final signInFuture =
+        _auth.signInWithEmailAndPassword(email: email, password: password);
 
     // Execute sign-in and get user data concurrently
     UserCredential result = await signInFuture.catchError((e) {
@@ -237,7 +241,7 @@ Future<void> studentLogin(String email, String password, BuildContext context) a
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => MyApp()),
-              (Route<dynamic> route) => false,
+          (Route<dynamic> route) => false,
         );
 
         // Notify MyAppState of user login
@@ -265,8 +269,6 @@ Future<void> studentLogin(String email, String password, BuildContext context) a
   }
 }
 
-
-
 // Logout method
 Future<void> onLogout(BuildContext context) async {
   try {
@@ -284,7 +286,8 @@ Future<void> onLogout(BuildContext context) async {
 
     // Reset login preferences
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Clear all preferences instead of removing specific keys
+    await prefs
+        .clear(); // Clear all preferences instead of removing specific keys
 
     showToast("Logout Successful");
 
@@ -293,11 +296,12 @@ Future<void> onLogout(BuildContext context) async {
       Navigator.pushAndRemoveUntil(
         context,
         PageRouteBuilder(
-          pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+          pageBuilder: (BuildContext context, Animation<double> animation,
+              Animation<double> secondaryAnimation) {
             return MyApp();
           },
         ),
-            (Route route) => false,
+        (Route route) => false,
       );
     }
   } catch (e) {
@@ -305,8 +309,6 @@ Future<void> onLogout(BuildContext context) async {
     showToast("Logout Failed. Please try again.");
   }
 }
-
-
 
 // Method to check if the user is logged in as admin
 bool isLoggedIn() {
@@ -317,8 +319,6 @@ bool isLoggedIn() {
 bool isStudentLoggedIn() {
   return (prefs.getBool('isStudentLoggedIn') ?? false);
 }
-
-
 
 // Optimized Google Student Login Method
 Future<void> studentLoginWithGoogle(BuildContext context) async {
@@ -331,7 +331,8 @@ Future<void> studentLoginWithGoogle(BuildContext context) async {
     // Attempt to sign in using Google account
     GoogleSignInAccount? googleUser = await googleSignIn.signIn();
     if (googleUser == null) {
-      Fluttertoast.showToast(msg: "Google sign-in cancelled", timeInSecForIosWeb: 4);
+      Fluttertoast.showToast(
+          msg: "Google sign-in cancelled", timeInSecForIosWeb: 4);
       return;
     }
 
@@ -346,7 +347,8 @@ Future<void> studentLoginWithGoogle(BuildContext context) async {
     // Sign in with the Google credential
     UserCredential result = await _auth.signInWithCredential(credential);
     if (result.user == null) {
-      Fluttertoast.showToast(msg: "Firebase sign-in failed", timeInSecForIosWeb: 4);
+      Fluttertoast.showToast(
+          msg: "Firebase sign-in failed", timeInSecForIosWeb: 4);
       return;
     }
 
@@ -358,7 +360,9 @@ Future<void> studentLoginWithGoogle(BuildContext context) async {
 
     if (!snapshot.exists) {
       print("No account found in the database.");
-      Fluttertoast.showToast(msg: "No Account Found for this Google account.", timeInSecForIosWeb: 4);
+      Fluttertoast.showToast(
+          msg: "No Account Found for this Google account.",
+          timeInSecForIosWeb: 4);
       await googleSignIn.disconnect(); // Clear Google account cache
       await _auth.signOut();
       return;
@@ -372,7 +376,8 @@ Future<void> studentLoginWithGoogle(BuildContext context) async {
     if (role == 'Student') {
       print('Role is Student');
       await prefs.setString('studentUUID', userId); // Cache student UUID
-      await prefs.setBool('isStudentLoggedIn', true); // Mark as student logged in
+      await prefs.setBool(
+          'isStudentLoggedIn', true); // Mark as student logged in
 
       showToast("Logged In as Student: ${result.user!.email}");
       print("Logged In as Student: ${result.user!.email}");
@@ -381,7 +386,7 @@ Future<void> studentLoginWithGoogle(BuildContext context) async {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => MyApp()),
-            (Route<dynamic> route) => false,
+        (Route<dynamic> route) => false,
       );
 
       // Notify MyAppState of user login
@@ -395,7 +400,8 @@ Future<void> studentLoginWithGoogle(BuildContext context) async {
     }
   } catch (e) {
     print("Error in studentLoginWithGoogle: ${e.toString()}");
-    Fluttertoast.showToast(msg: "Login failed: ${e.toString()}", timeInSecForIosWeb: 4);
+    Fluttertoast.showToast(
+        msg: "Login failed: ${e.toString()}", timeInSecForIosWeb: 4);
 
     // Clear cached Google account to allow re-selection
     GoogleSignIn googleSignIn = GoogleSignIn();
@@ -403,8 +409,6 @@ Future<void> studentLoginWithGoogle(BuildContext context) async {
     FirebaseAuth.instance.signOut();
   }
 }
-
-
 
 // Optimized Admin Google Login Method
 Future<void> adminLoginWithGoogle(BuildContext context) async {
@@ -415,7 +419,8 @@ Future<void> adminLoginWithGoogle(BuildContext context) async {
     // Attempt to sign in using Google account
     GoogleSignInAccount? googleUser = await googleSignIn.signIn();
     if (googleUser == null) {
-      Fluttertoast.showToast(msg: "Google sign-in cancelled", timeInSecForIosWeb: 4);
+      Fluttertoast.showToast(
+          msg: "Google sign-in cancelled", timeInSecForIosWeb: 4);
       return;
     }
 
@@ -430,7 +435,8 @@ Future<void> adminLoginWithGoogle(BuildContext context) async {
     // Sign in with the Google credential
     UserCredential result = await _auth.signInWithCredential(credential);
     if (result.user == null) {
-      Fluttertoast.showToast(msg: "Firebase sign-in failed", timeInSecForIosWeb: 4);
+      Fluttertoast.showToast(
+          msg: "Firebase sign-in failed", timeInSecForIosWeb: 4);
       return;
     }
 
@@ -461,7 +467,7 @@ Future<void> adminLoginWithGoogle(BuildContext context) async {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => MyHomePage()),
-              (Route<dynamic> route) => false,
+          (Route<dynamic> route) => false,
         );
       } else {
         print("Cannot log in as Admin. User is a Student.");
@@ -497,4 +503,3 @@ Future<void> adminLoginWithGoogle(BuildContext context) async {
     FirebaseAuth.instance.signOut();
   }
 }
-
