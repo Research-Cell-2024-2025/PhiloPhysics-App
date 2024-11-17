@@ -95,6 +95,8 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
 
   bool _isPasswordVisible = false;
   bool isLoading = false;
+  bool isGoogleLoading = false;
+
 
   Future<void> checkValidation() async {
     if (_formKeyValue.currentState!.validate()) {
@@ -189,29 +191,39 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
               ),
             ),
             SizedBox(height: MediaQuery.of(context).size.height / 50),
-            Container(
+            isGoogleLoading
+                ? CircularProgressIndicator()
+                : Container(
               height: MediaQuery.of(context).size.height / 16,
-              width : MediaQuery.of(context).size.width - 20.0,
+              width: MediaQuery.of(context).size.width - 20.0,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white30,  // White background
-                  foregroundColor: Colors.black,  // Text and icon color
+                  backgroundColor: Colors.white30,
+                  foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15),
                   ),
                   padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
                   elevation: 2,
                 ),
-                onPressed: () => AdminloginWithGoogle(context),
+                onPressed: () async {
+                  setState(() {
+                    isGoogleLoading = true; // Start loading
+                  });
+                  await adminLoginWithGoogle(context);
+                  setState(() {
+                    isGoogleLoading = false; // Stop loading
+                  });
+                },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
-                      'assets/google_icon.png', // Your Google icon path
-                      width: 30, // You can adjust size
+                      'assets/google_icon.png',
+                      width: 30,
                       height: 30,
                     ),
-                    SizedBox(width: 10), // Space between the icon and the text
+                    SizedBox(width: 10),
                     Text(
                       'Sign in with Google',
                       style: TextStyle(

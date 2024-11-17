@@ -257,135 +257,138 @@ class GraphContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 5,
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      width: MediaQuery.of(context).size.width * 0.85,
-      height: 220,
-      child: Column(
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 5,
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: BarChart(
-              BarChartData(
-                barTouchData: BarTouchData(
-                  touchTooltipData: BarTouchTooltipData(
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      int totalSeconds = (rod.toY * 60).toInt();
-                      int hours = totalSeconds ~/ 3600;
-                      int minutes = (totalSeconds % 3600) ~/ 60;
-                      int seconds = totalSeconds % 60;
+          ],
+        ),
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height / 3.4,
+        child: Column(
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(height: MediaQuery.of(context).size.height / 50),
+            Expanded(
+              child: BarChart(
+                BarChartData(
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        int totalSeconds = (rod.toY * 60).toInt();
+                        int hours = totalSeconds ~/ 3600;
+                        int minutes = (totalSeconds % 3600) ~/ 60;
+                        int seconds = totalSeconds % 60;
 
-                      String tooltipText =
-                          '$hours hrs $minutes mins $seconds secs';
+                        String tooltipText =
+                            '$hours hrs $minutes mins $seconds secs';
 
-                      return BarTooltipItem(
-                        tooltipText,
-                        GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.black87,
-                        ),
+                        return BarTooltipItem(
+                          tooltipText,
+                          GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.black87,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  maxY: maxY,
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 50,
+                        interval: yInterval.toDouble(),
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            formatYAxisLabel(value),
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.black87,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (double value, _) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              weekdays[value.toInt()],
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border(
+                      left: BorderSide(
+                          color: Colors.black, width: 1), // Left Y-axis
+                      bottom: BorderSide(
+                          color: Colors.black, width: 1), // Bottom X-axis
+                    ),
+                  ),
+                  barGroups: getChartData(),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: true,
+                    drawHorizontalLine: true,
+                    horizontalInterval: yInterval.toDouble(),
+                    verticalInterval: 1,
+                    getDrawingHorizontalLine: (value) {
+                      return FlLine(
+                        color: Colors.grey.withOpacity(0.3),
+                        strokeWidth: 1,
+                      );
+                    },
+                    getDrawingVerticalLine: (value) {
+                      return FlLine(
+                        color: Colors.grey.withOpacity(0.3),
+                        strokeWidth: 1,
                       );
                     },
                   ),
                 ),
-                maxY: maxY,
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 50,
-                      interval: yInterval.toDouble(),
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          formatYAxisLabel(value),
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.black87,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (double value, _) {
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Text(
-                            weekdays[value.toInt()],
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border(
-                    left: BorderSide(
-                        color: Colors.black, width: 1), // Left Y-axis
-                    bottom: BorderSide(
-                        color: Colors.black, width: 1), // Bottom X-axis
-                  ),
-                ),
-                barGroups: getChartData(),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: true,
-                  drawHorizontalLine: true,
-                  horizontalInterval: yInterval.toDouble(),
-                  verticalInterval: 1,
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: Colors.grey.withOpacity(0.3),
-                      strokeWidth: 1,
-                    );
-                  },
-                  getDrawingVerticalLine: (value) {
-                    return FlLine(
-                      color: Colors.grey.withOpacity(0.3),
-                      strokeWidth: 1,
-                    );
-                  },
-                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

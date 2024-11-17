@@ -14,6 +14,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await initializePreferences();
+  // Enable offline persistence for Firebase Realtime Database
+  FirebaseDatabase.instance.setPersistenceEnabled(true);
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.playIntegrity,
     // appleProvider: AppleProvider.appAttest,

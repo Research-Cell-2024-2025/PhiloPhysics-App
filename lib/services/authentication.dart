@@ -18,69 +18,80 @@ Future<void> initializePreferences() async {
 // Admin login method
 Future<void> login(String email, String password, BuildContext context) async {
   try {
-    FirebaseAuth _auth = FirebaseAuth.instance;
+    final FirebaseAuth _auth = FirebaseAuth.instance;
 
     // Attempt to sign in with email and password
-    UserCredential result = await _auth.signInWithEmailAndPassword(
+    final UserCredential result = await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
-    ).catchError((e) {
-      Fluttertoast.showToast(msg: "Invalid Credentials", timeInSecForIosWeb: 4);
-    });
+    );
 
-    if (result != null) {
+    if (result.user != null) {
       print("User Exists");
-      String role = '';
-      String userId = result.user!.uid;
-      DatabaseReference dbRef = FirebaseDatabase.instance.ref();
+      final String userId = result.user!.uid;
+      final DatabaseReference dbRef = FirebaseDatabase.instance.ref().child('Users').child(userId);
 
-      // Fetch user data from 'Users' document
-      DataSnapshot snapshot = (await dbRef.child('Users').child(userId).once()).snapshot;
+      // Fetch user data from 'Users' node
+      final DataSnapshot snapshot = await dbRef.get();
 
+      // Check if snapshot exists and extract the role
       if (snapshot.exists) {
-        // Get user role if the user exists
-        Map<dynamic, dynamic> userData = snapshot.value as Map<dynamic, dynamic>;
-        role = userData['role'] ?? '';
-      }
+        final Map<dynamic, dynamic> userData = snapshot.value as Map<dynamic, dynamic>;
+        final String role = userData['role'] ?? '';
 
-      // Check if the role is not 'Student' or user data does not exist
-      if (role != 'Student' || !snapshot.exists) {
-        // Log in as an admin
-        prefs.setBool("isLogged", true);  // Mark as admin logged in
-        Fluttertoast.showToast(
-          msg: "Logged In as: $email",
-          fontSize: 14,
-          timeInSecForIosWeb: 4,
-          toastLength: Toast.LENGTH_LONG,
-        );
+        // If role is not 'Student', log in as admin
+        if (role != 'Student') {
+          await prefs.setBool("isLogged", true);
+          Fluttertoast.showToast(
+            msg: "Logged In as: $email",
+            fontSize: 14,
+            timeInSecForIosWeb: 4,
+            toastLength: Toast.LENGTH_LONG,
+          );
 
-        // Navigate to the home page and remove all previous routes
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => MyHomePage()),
-              (Route<dynamic> route) => false, // Remove all previous routes
-        );
+          // Navigate to the home page and clear all previous routes
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => MyHomePage()),
+                (Route<dynamic> route) => false,
+          );
+        } else {
+          // User is a student; show toast and sign out
+          Fluttertoast.showToast(
+            msg: "Cannot log in as Admin. User is a Student.",
+            fontSize: 14,
+            timeInSecForIosWeb: 4,
+            toastLength: Toast.LENGTH_LONG,
+          );
+          await _auth.signOut();
+        }
       } else {
-        // Show toast if the user is a 'Student'
+        // No user data found in the database, treat as error
         Fluttertoast.showToast(
-          msg: "Cannot log in as Admin. User is a Student.",
+          msg: "User data not found.",
           fontSize: 14,
           timeInSecForIosWeb: 4,
           toastLength: Toast.LENGTH_LONG,
         );
-
-        // Sign out the user
         await _auth.signOut();
       }
     }
+  } on FirebaseAuthException catch (e) {
+    // Handle specific Firebase authentication errors
+    if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+      Fluttertoast.showToast(msg: "Invalid Credentials", timeInSecForIosWeb: 4);
+    } else {
+      Fluttertoast.showToast(msg: "Login Failed: ${e.message}", timeInSecForIosWeb: 4);
+    }
   } catch (e) {
+    // Handle any other errors
     print('Error: $e');
+    Fluttertoast.showToast(msg: "An error occurred. Please try again.", timeInSecForIosWeb: 4);
   }
 }
 
 
 
-// Student registration method
 Future<void> Studentregister(
     String email,
     String name,
@@ -93,51 +104,69 @@ Future<void> Studentregister(
     FirebaseAuth _auth = FirebaseAuth.instance;
     GoogleSignIn googleSignIn = GoogleSignIn();
 
-    // Create user in Firebase Authentication with email/password
-    UserCredential result = await _auth.createUserWithEmailAndPassword(
+    // Start creating user with email and password
+    final userCreation = _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
 
-    // Check if the user was successfully created
-    if (result != null) {
-      // Authenticate Google sign-in
-      GoogleSignInAccount? googleUser = await googleSignIn.signInSilently();
+    // Attempt silent Google sign-in
+    GoogleSignInAccount? googleUser = await googleSignIn.signInSilently();
 
-      if (googleUser == null) {
-        // If no silent sign-in is possible, try to use GoogleSignIn with the credentials
-        googleUser = await googleSignIn.signIn();
-      }
+    // If silent sign-in fails, prompt the user to choose a Google account
+    if (googleUser == null) {
+      googleUser = await googleSignIn.signIn();
+    }
+
+    // Await user creation result
+    final result = await userCreation;
+
+    if (result != null) {
+      // Save user details to the Realtime Database
+      final dbRef = FirebaseDatabase.instance.ref();
 
       if (googleUser != null) {
-        // Check if the Google account email matches the provided email
-        if (googleUser.email.toLowerCase() != email.toLowerCase()) {
-          // Emails do not match, stop registration
-          Fluttertoast.showToast(
-            msg: "The Google account email does not match the provided email.",
-            timeInSecForIosWeb: 4,
-          );
-          // Delete the Firebase account created with email/password
-          await result.user!.delete();
-          await _auth.signOut();
-          return;
-        }
-
-        // If emails match, proceed with linking the Google account
-        GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        // Get Google authentication details
+        final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
 
         OAuthCredential googleCredential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,
         );
 
+        // Check if the Google account email matches the provided email
+        if (googleUser.email.toLowerCase() != email.toLowerCase()) {
+          Fluttertoast.showToast(
+            msg:
+            "The Google account email does not match the provided email.",
+            timeInSecForIosWeb: 4,
+          );
+
+          // Delete the Firebase account created with email/password
+          await result.user!.delete();
+          await _auth.signOut();
+          return;
+        }
+
         // Link Google account with the Firebase Authentication user
         await result.user!.linkWithCredential(googleCredential);
         print("Account linked with Google successfully");
+
+        // Show a success message for Google linking
+        Fluttertoast.showToast(
+          msg: "User Account Created and Linked with Google Successfully",
+          timeInSecForIosWeb: 4,
+        );
+      } else {
+        // Show a success message for email/password registration only
+        Fluttertoast.showToast(
+          msg: "User Account Created Successfully",
+          timeInSecForIosWeb: 4,
+        );
       }
 
-      // Add user details to the Realtime Database under the "Users" node
-      DatabaseReference dbRef = FirebaseDatabase.instance.ref();
+      // Save user details to the Realtime Database
       await dbRef.child('Users').child(result.user!.uid).set({
         'name': name,
         'classDiv': classdiv,
@@ -146,11 +175,7 @@ Future<void> Studentregister(
         'role': 'Student',
       });
 
-      // Show a success message
-      Fluttertoast.showToast(
-        msg: "User Account Created Successfully",
-        timeInSecForIosWeb: 4,
-      );
+      // Navigate back to the previous screen
       Navigator.pop(context);
     }
   } catch (e) {
@@ -166,64 +191,80 @@ Future<void> Studentregister(
 
 
 
-// Student login method
+
+
+// Optimized Student login method
 Future<void> studentLogin(String email, String password, BuildContext context) async {
   try {
-    print("student login begins");
+    print("Student login begins");
     FirebaseAuth _auth = FirebaseAuth.instance;
+    DatabaseReference dbRef = FirebaseDatabase.instance.ref();
 
-    // Attempt to log in with email and password
-    UserCredential result = await _auth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    ).catchError((e) {
-      print("Firebase Auth Error: ${e.toString()}"); // Log Firebase Auth errors
+    // Start Firebase Authentication login
+    final signInFuture = _auth.signInWithEmailAndPassword(email: email, password: password);
+
+    // Execute sign-in and get user data concurrently
+    UserCredential result = await signInFuture.catchError((e) {
+      print("Firebase Auth Error: ${e.toString()}");
+      Fluttertoast.showToast(
+        msg: "Invalid Credentials",
+        timeInSecForIosWeb: 4,
+      );
+      throw e;
     });
 
-    if (result != null) {
-      String userId = result.user!.uid;
-      DatabaseReference dbRef = FirebaseDatabase.instance.ref();
-      DataSnapshot snapshot = (await dbRef.child('Users').child(userId).once()).snapshot;
+    // Check if user login was successful
+    if (result.user == null) return;
 
-      if (snapshot.exists) {
-        // Student found in Realtime Database
-        Map<dynamic, dynamic> userData = snapshot.value as Map<dynamic, dynamic>;
-        String role = userData['role'];
+    String userId = result.user!.uid;
 
-        if (role == 'Student') {
-          print('Role is Student');
-          prefs.setString('studentUUID', userId); // Store student UUID
-          prefs.setBool('isStudentLoggedIn', true); // Mark as student logged in
+    // Fetch user data from Firebase Database in parallel
+    final snapshot = await dbRef.child('Users/$userId').get();
 
-          showToast("Logged In as Student: $email");
-          print("Logged In as Student: $email");
+    if (snapshot.exists) {
+      Map<dynamic, dynamic> userData = snapshot.value as Map<dynamic, dynamic>;
+      String role = userData['role'] ?? '';
 
-          // Navigate to the home page and remove all previous routes
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => MyApp()),
-                (Route<dynamic> route) => false, // Remove all previous routes
-          );
+      if (role == 'Student') {
+        print('Role is Student');
+        await prefs.setString('studentUUID', userId);
+        await prefs.setBool('isStudentLoggedIn', true);
 
-          final myAppState = context.findAncestorStateOfType<MyAppState>();
-          if (myAppState != null) {
-            myAppState.onUserLogin(userId); // Call onUserLogin when user logs in
-          }
+        showToast("Logged In as Student: $email");
+        print("Logged In as Student: $email");
 
+        // Navigate to the home page and remove all previous routes
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => MyApp()),
+              (Route<dynamic> route) => false,
+        );
 
-        } else {
-          showToast("You are not authorized to log in as a student.");
-        }
+        // Notify MyAppState of user login
+        final myAppState = context.findAncestorStateOfType<MyAppState>();
+        myAppState?.onUserLogin(userId);
       } else {
-        print("Not Student");
-        Fluttertoast.showToast(msg :"You are not authorized to log in as a student.");
+        showToast("You are not authorized to log in as a student.");
+        await _auth.signOut();
       }
+    } else {
+      // User not found in Realtime Database
+      print("User not found in Firebase Database");
+      Fluttertoast.showToast(
+        msg: "You are not authorized to log in as a student.",
+        timeInSecForIosWeb: 4,
+      );
+      await _auth.signOut();
     }
   } catch (e) {
     print("Error in studentLogin: ${e.toString()}");
-    Fluttertoast.showToast(msg: "Incorrect Credentials ! / No Account Found",timeInSecForIosWeb: 4);
+    Fluttertoast.showToast(
+      msg: "Incorrect Credentials! / No Account Found",
+      timeInSecForIosWeb: 4,
+    );
   }
 }
+
 
 
 // Logout method
@@ -279,7 +320,7 @@ bool isStudentLoggedIn() {
 
 
 
-// Google Logins
+// Optimized Google Student Login Method
 Future<void> studentLoginWithGoogle(BuildContext context) async {
   try {
     print("Google student login begins");
@@ -289,140 +330,171 @@ Future<void> studentLoginWithGoogle(BuildContext context) async {
 
     // Attempt to sign in using Google account
     GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+    if (googleUser == null) {
+      Fluttertoast.showToast(msg: "Google sign-in cancelled", timeInSecForIosWeb: 4);
+      return;
+    }
 
-    if (googleUser != null) {
-      GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-      // Create a new credential from the Google account
-      OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+    // Create Google credential
+    OAuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    // Sign in with the Google credential
+    UserCredential result = await _auth.signInWithCredential(credential);
+    if (result.user == null) {
+      Fluttertoast.showToast(msg: "Firebase sign-in failed", timeInSecForIosWeb: 4);
+      return;
+    }
+
+    String userId = result.user!.uid;
+    DatabaseReference dbRef = FirebaseDatabase.instance.ref();
+
+    // Fetch user data from Firebase Database
+    DataSnapshot snapshot = await dbRef.child('Users/$userId').get();
+
+    if (!snapshot.exists) {
+      print("No account found in the database.");
+      Fluttertoast.showToast(msg: "No Account Found for this Google account.", timeInSecForIosWeb: 4);
+      await googleSignIn.disconnect(); // Clear Google account cache
+      await _auth.signOut();
+      return;
+    }
+
+    // Extract user data
+    Map<dynamic, dynamic> userData = snapshot.value as Map<dynamic, dynamic>;
+    String role = userData['role'] ?? '';
+
+    // Check if the user has the 'Student' role
+    if (role == 'Student') {
+      print('Role is Student');
+      await prefs.setString('studentUUID', userId); // Cache student UUID
+      await prefs.setBool('isStudentLoggedIn', true); // Mark as student logged in
+
+      showToast("Logged In as Student: ${result.user!.email}");
+      print("Logged In as Student: ${result.user!.email}");
+
+      // Navigate to the home page and remove all previous routes
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => MyApp()),
+            (Route<dynamic> route) => false,
       );
 
-      // Sign in with the Google credential
-      UserCredential result = await _auth.signInWithCredential(credential);
-
-      if (result != null) {
-        String userId = result.user!.uid;
-        DatabaseReference dbRef = FirebaseDatabase.instance.ref();
-        DataSnapshot snapshot = (await dbRef.child('Users').child(userId).once()).snapshot;
-
-        if (snapshot.exists) {
-          // Student found in Realtime Database
-          Map<dynamic, dynamic> userData = snapshot.value as Map<dynamic, dynamic>;
-          String role = userData['role'];
-
-          if (role == 'Student') {
-            print('Role is Student');
-            prefs.setString('studentUUID', userId); // Store student UUID
-            prefs.setBool('isStudentLoggedIn', true); // Mark as student logged in
-
-            showToast("Logged In as Student: ${result.user!.email}");
-            print("Logged In as Student: ${result.user!.email}");
-
-            // Navigate to the home page and remove all previous routes
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => MyApp()),
-                  (Route<dynamic> route) => false, // Remove all previous routes
-            );
-
-            final myAppState = context.findAncestorStateOfType<MyAppState>();
-            if (myAppState != null) {
-              myAppState.onUserLogin(userId); // Call onUserLogin when user logs in
-            }
-          } else {
-            showToast("You are not authorized to log in as a student.");
-            print("You are not authorized to log in as a student.");
-            await googleSignIn.disconnect(); // Log out and clear Google account cache
-            await _auth.signOut(); // Log out from Firebase
-          }
-        } else {
-          Fluttertoast.showToast(msg: "No Account Found for this Google account.", timeInSecForIosWeb: 4);
-          print('No account found.');
-          await googleSignIn.disconnect(); // Clear Google account cache
-          await _auth.signOut(); // Log out from Firebase
-        }
-      }
+      // Notify MyAppState of user login
+      final myAppState = context.findAncestorStateOfType<MyAppState>();
+      myAppState?.onUserLogin(userId);
+    } else {
+      showToast("You are not authorized to log in as a student.");
+      print("You are not authorized to log in as a student.");
+      await googleSignIn.disconnect(); // Clear Google account cache
+      await _auth.signOut();
     }
   } catch (e) {
     print("Error in studentLoginWithGoogle: ${e.toString()}");
-    Fluttertoast.showToast(msg: "You are not authorized to log in as a student.", timeInSecForIosWeb: 4);
+    Fluttertoast.showToast(msg: "Login failed: ${e.toString()}", timeInSecForIosWeb: 4);
 
-    // Clear the cached Google account info to allow re-selection
+    // Clear cached Google account to allow re-selection
     GoogleSignIn googleSignIn = GoogleSignIn();
     await googleSignIn.disconnect();
+    FirebaseAuth.instance.signOut();
   }
 }
 
 
-Future<void> AdminloginWithGoogle(BuildContext context) async {
+
+// Optimized Admin Google Login Method
+Future<void> adminLoginWithGoogle(BuildContext context) async {
   try {
     FirebaseAuth _auth = FirebaseAuth.instance;
     GoogleSignIn googleSignIn = GoogleSignIn();
 
     // Attempt to sign in using Google account
     GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+    if (googleUser == null) {
+      Fluttertoast.showToast(msg: "Google sign-in cancelled", timeInSecForIosWeb: 4);
+      return;
+    }
 
-    if (googleUser != null) {
-      GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-      // Create a new credential from the Google account
-      OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+    // Create Google credential
+    OAuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
 
-      // Sign in with the Google credential
-      UserCredential result = await _auth.signInWithCredential(credential);
+    // Sign in with the Google credential
+    UserCredential result = await _auth.signInWithCredential(credential);
+    if (result.user == null) {
+      Fluttertoast.showToast(msg: "Firebase sign-in failed", timeInSecForIosWeb: 4);
+      return;
+    }
 
-      if (result != null) {
-        print("User Exists");
-        String role = '';
-        String userId = result.user!.uid;
-        DatabaseReference dbRef = FirebaseDatabase.instance.ref();
+    print("User Exists");
+    String userId = result.user!.uid;
+    DatabaseReference dbRef = FirebaseDatabase.instance.ref();
 
-        // Fetch user data from 'Users' document
-        DataSnapshot snapshot = (await dbRef.child('Users').child(userId).once()).snapshot;
+    // Fetch user data from Firebase Database
+    DataSnapshot snapshot = await dbRef.child('Users/$userId').get();
 
-        if (snapshot.exists) {
-          Map<dynamic, dynamic> userData = snapshot.value as Map<dynamic, dynamic>;
-          role = userData['role'] ?? '';
-        }
+    // Check if the user data exists and is not a student
+    if (snapshot.exists) {
+      Map<dynamic, dynamic> userData = snapshot.value as Map<dynamic, dynamic>;
+      String role = userData['role'] ?? '';
 
-        // Check if the role is not 'Student' or user data does not exist
-        if (role != 'Student' || !snapshot.exists) {
-          prefs.setBool("isLogged", true); // Mark as admin logged in
-          Fluttertoast.showToast(
-            msg: "Logged In as Admin: ${result.user!.email}",
-            fontSize: 14,
-            timeInSecForIosWeb: 4,
-            toastLength: Toast.LENGTH_LONG,
-          );
+      if (role != 'Student') {
+        print("Logged In as Admin");
+        prefs.setBool("isLogged", true); // Mark as admin logged in
 
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => MyHomePage()),
-                (Route<dynamic> route) => false,
-          );
-        } else {
-          Fluttertoast.showToast(
-            msg: "Cannot log in as Admin. User is a Student.",
-            fontSize: 14,
-            timeInSecForIosWeb: 4,
-            toastLength: Toast.LENGTH_LONG,
-          );
-          await googleSignIn.disconnect(); // Clear Google account cache
-          await _auth.signOut();
-        }
+        Fluttertoast.showToast(
+          msg: "Logged In as Admin: ${result.user!.email}",
+          fontSize: 14,
+          timeInSecForIosWeb: 4,
+          toastLength: Toast.LENGTH_LONG,
+        );
+
+        // Navigate to the admin home page and clear navigation stack
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => MyHomePage()),
+              (Route<dynamic> route) => false,
+        );
+      } else {
+        print("Cannot log in as Admin. User is a Student.");
+        Fluttertoast.showToast(
+          msg: "Cannot log in as Admin. User is a Student.",
+          fontSize: 14,
+          timeInSecForIosWeb: 4,
+          toastLength: Toast.LENGTH_LONG,
+        );
+        await googleSignIn.disconnect(); // Log out and clear Google cache
+        await _auth.signOut();
       }
+    } else {
+      print("No account found in the database.");
+      Fluttertoast.showToast(
+        msg: "No Account Found for this Google account.",
+        timeInSecForIosWeb: 4,
+        toastLength: Toast.LENGTH_LONG,
+      );
+      await googleSignIn.disconnect(); // Clear Google cache
+      await _auth.signOut();
     }
   } catch (e) {
-    print('Error: $e');
-    Fluttertoast.showToast(msg: "Google login failed. Please try again.", timeInSecForIosWeb: 4);
+    print("Error: $e");
+    Fluttertoast.showToast(
+      msg: "Google login failed. Please try again.",
+      timeInSecForIosWeb: 4,
+    );
 
-    // Clear the cached Google account info to allow re-selection
+    // Clear Google account info to allow re-selection on retry
     GoogleSignIn googleSignIn = GoogleSignIn();
     await googleSignIn.disconnect();
+    FirebaseAuth.instance.signOut();
   }
 }
+

@@ -1,3 +1,4 @@
+import 'package:ephysicsapp/screens/Admin/annualAdminAppUsageStatistics.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -230,6 +231,7 @@ class _MonthlyAdminAppUsageStatisticsState
                     ),
                     const SizedBox(height: 24),
                     GraphContainer(
+                      selectedMonth: selectedMonthIndex,
                       maxY: getMaxY(),
                       yInterval: calculateYAxisInterval(getMaxY()),
                       getChartData: getWeeklyChartData,
@@ -249,20 +251,21 @@ class GraphContainer extends StatelessWidget {
   final int yInterval;
   final List<BarChartGroupData> Function() getChartData;
   final String title;
+  final int selectedMonth;
 
   const GraphContainer({
     required this.maxY,
     required this.yInterval,
     required this.getChartData,
     required this.title,
+    required this.selectedMonth,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -277,7 +280,7 @@ class GraphContainer extends StatelessWidget {
           ],
         ),
         width: MediaQuery.of(context).size.width,
-        height: 220,
+        height: MediaQuery.of(context).size.height / 3.25,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -336,6 +339,11 @@ class GraphContainer extends StatelessWidget {
                       ),
                     ),
                     bottomTitles: AxisTitles(
+                      axisNameWidget: Text("Weeks in ${months[selectedMonth]}", style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.black,
+                        fontWeight: FontWeight.w600,
+                      ),),
                       sideTitles: SideTitles(
                         showTitles: true,
                         interval: 5,
