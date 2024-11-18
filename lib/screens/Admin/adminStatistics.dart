@@ -365,7 +365,7 @@ class _AdminStatisticsState extends State<AdminStatistics> {
                 Column(
                   children: [
                     AutoSizeText(
-                      'Matrerial Used by Students',
+                      'Materials Used by Students',
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       softWrap: true,

@@ -74,7 +74,7 @@ class _StudentLoginState extends State<StudentLogin> {
               Text(
                 "Student Login",
                 style: GoogleFonts.merriweather(
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   fontStyle: FontStyle.italic,
                   color: color5,
@@ -149,7 +149,7 @@ class _StudentLoginState extends State<StudentLogin> {
                         },
                         child: Text(
                           'Login',
-                          style: TextStyle(fontSize: 18, color: color1),
+                          style: GoogleFonts.poppins(fontSize: 18, color: color1,fontWeight: FontWeight.bold),
                         ),
                       ),
                   ),
@@ -189,7 +189,7 @@ class _StudentLoginState extends State<StudentLogin> {
                       SizedBox(width: 10),
                       Text(
                         'Sign in with Google',
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -235,8 +235,16 @@ class _StudentLoginState extends State<StudentLogin> {
                     child: Text(
                       'REGISTER',
                       style: TextStyle(
+                          shadows: [
+                            Shadow(
+                                color: color5,
+                                offset: Offset(0, -2))
+                          ],
                           decoration: TextDecoration.underline,
-                          color: color5,
+                          decorationThickness: 3,
+                          decorationColor: color5,
+                          decorationStyle: TextDecorationStyle.solid,
+                          color: Colors.transparent,
                           fontSize: 16,
                           fontWeight: FontWeight.bold),
                     ),

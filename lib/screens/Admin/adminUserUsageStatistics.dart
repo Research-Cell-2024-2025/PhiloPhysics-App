@@ -6,6 +6,7 @@ import 'package:ephysicsapp/screens/Admin/monthlyAdminAppUsageStatistics.dart';
 import 'package:ephysicsapp/screens/Admin/weeklyAdminAppUsageStatistics.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:material_segmented_control/material_segmented_control.dart';
 
 class AdminUserAppUsageStats extends StatefulWidget {
@@ -100,7 +101,7 @@ class _AdminUserAppUsageStatsState extends State<AdminUserAppUsageStats> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Admin Statistics"),
+        title: Text("Admin Statistics",style: GoogleFonts.poppins()),
         centerTitle: true,
       ),
       body: isLoading
@@ -124,11 +125,11 @@ class _AdminUserAppUsageStatsState extends State<AdminUserAppUsageStats> {
                       selectedTextStyle: TextStyle(
                           color: color1,
                           fontWeight: FontWeight.bold,
-                          fontSize: 16),
+                          fontSize: 17),
                       unselectedTextStyle: TextStyle(
                           color: color5,
                           fontWeight: FontWeight.bold,
-                          fontSize: 16),
+                          fontSize: 17),
                       borderWidth: 2,
                       borderRadius: 32.0,
                       onSegmentTapped: (index) {

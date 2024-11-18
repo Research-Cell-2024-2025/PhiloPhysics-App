@@ -433,6 +433,7 @@ class _StudentRegisterState extends State<StudentRegister> {
                     ],
                   ),
                 ),
+                SizedBox(height: 30),
               ],
             ),
           ),

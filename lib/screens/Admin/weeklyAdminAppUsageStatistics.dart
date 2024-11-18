@@ -18,7 +18,7 @@ class _WeeklyAdminAppUsageStatisticsState
   Map<String, int> weeklyUsage = {};
   bool _isLoading = true;
   DateTime _selectedWeek =
-      DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
+  DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
   final List<String> weekdays = [
     'Mon',
     'Tue',
@@ -40,19 +40,23 @@ class _WeeklyAdminAppUsageStatisticsState
     });
   }
 
+  // Optimized version of fetching data
   Future<Map<String, int>> getWeeklyAppUsageData(DateTime selectedDate) async {
     final DatabaseReference dbRef =
-        FirebaseDatabase.instance.ref().child('Users');
+    FirebaseDatabase.instance.ref().child('Users');
     Map<String, int> weeklyUsage = {};
 
     DateTime startOfWeek =
-        selectedDate.subtract(Duration(days: selectedDate.weekday - 1));
+    selectedDate.subtract(Duration(days: selectedDate.weekday - 1));
 
     try {
       DatabaseEvent event = await dbRef.once();
       DataSnapshot snapshot = event.snapshot;
 
       if (snapshot.exists) {
+        List<Future> userDataFutures = [];
+
+        // Get all users' data in parallel
         for (DataSnapshot userSnapshot in snapshot.children) {
           String userId = userSnapshot.key ?? '';
 
@@ -63,20 +67,24 @@ class _WeeklyAdminAppUsageStatisticsState
                 .child(userId)
                 .child('AppUsage')
                 .child(DateFormat('MMM yyyy').format(weekday));
-            DataSnapshot dailySnapshot =
-                await userAppUsageRef.child(dateKey).get();
 
-            if (dailySnapshot.exists) {
-              int totalSeconds =
-                  _convertTimeToSeconds(dailySnapshot.value as String);
-              weeklyUsage[weekdays[weekday.weekday - 1]] =
-                  (weeklyUsage[weekdays[weekday.weekday - 1]] ?? 0) +
-                      totalSeconds;
-            } else {
-              weeklyUsage[weekdays[weekday.weekday - 1]] ??= 0;
-            }
+            // Fetch all days' usage data for each user in parallel
+            userDataFutures.add(userAppUsageRef.child(dateKey).get().then((dailySnapshot) {
+              if (dailySnapshot.exists) {
+                int totalSeconds =
+                _convertTimeToSeconds(dailySnapshot.value as String);
+                weeklyUsage[weekdays[weekday.weekday - 1]] =
+                    (weeklyUsage[weekdays[weekday.weekday - 1]] ?? 0) +
+                        totalSeconds;
+              } else {
+                weeklyUsage[weekdays[weekday.weekday - 1]] ??= 0;
+              }
+            }));
           }
         }
+
+        // Wait for all Firebase data fetches to complete
+        await Future.wait(userDataFutures);
       }
     } catch (e) {
       print('Error: $e');
@@ -96,7 +104,7 @@ class _WeeklyAdminAppUsageStatisticsState
     double maxUsage = weeklyUsage.isEmpty
         ? 10.0
         : weeklyUsage.values
-            .fold(0, (max, value) => math.max(max, value / 60.0));
+        .fold(0, (max, value) => math.max(max, value / 60.0));
 
     if (maxUsage == 0) {
       return 1.0;
@@ -112,7 +120,7 @@ class _WeeklyAdminAppUsageStatisticsState
   List<BarChartGroupData> getWeeklyChartData() {
     return List.generate(
       7,
-      (index) {
+          (index) {
         String dayKey = weekdays[index];
         double usage = (weeklyUsage[dayKey] ?? 0) / 60.0;
 
@@ -141,67 +149,67 @@ class _WeeklyAdminAppUsageStatisticsState
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blueAccent, Colors.white],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 24),
-                    GestureDetector(
-                      onTap: _showWeekPicker,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.2),
-                                spreadRadius: 2,
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                DateFormat('MMM d, yyyy').format(_selectedWeek),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              const Icon(Icons.calendar_today,
-                                  color: Colors.grey),
-                            ],
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blueAccent, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: _showWeekPicker,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          spreadRadius: 2,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          DateFormat('MMM d, yyyy').format(_selectedWeek),
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
                           ),
                         ),
-                      ),
+                        const Icon(Icons.calendar_today,
+                            color: Colors.grey),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    GraphContainer(
-                      maxY: getMaxY(),
-                      yInterval: calculateYAxisInterval(getMaxY()),
-                      getChartData: getWeeklyChartData,
-                      title: 'Weekly App Usage',
-                      weekdays: weekdays,
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 24),
+              GraphContainer(
+                maxY: getMaxY(),
+                yInterval: calculateYAxisInterval(getMaxY()),
+                getChartData: getWeeklyChartData,
+                title: 'Weekly App Usage',
+                weekdays: weekdays,
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -359,9 +367,9 @@ class GraphContainer extends StatelessWidget {
                     show: true,
                     border: Border(
                       left: BorderSide(
-                          color: Colors.black, width: 1), // Left Y-axis
+                          color: Colors.black, width: 2), // Left Y-axis
                       bottom: BorderSide(
-                          color: Colors.black, width: 1), // Bottom X-axis
+                          color: Colors.black, width: 2), // Bottom X-axis
                     ),
                   ),
                   barGroups: getChartData(),
@@ -374,13 +382,7 @@ class GraphContainer extends StatelessWidget {
                     getDrawingHorizontalLine: (value) {
                       return FlLine(
                         color: Colors.grey.withOpacity(0.3),
-                        strokeWidth: 1,
-                      );
-                    },
-                    getDrawingVerticalLine: (value) {
-                      return FlLine(
-                        color: Colors.grey.withOpacity(0.3),
-                        strokeWidth: 1,
+                        strokeWidth: 2,
                       );
                     },
                   ),

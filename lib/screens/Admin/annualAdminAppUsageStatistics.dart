@@ -32,9 +32,10 @@ class AnnualAdminAppUsageStatistics extends StatefulWidget {
 class _AdminStatisticsState extends State<AnnualAdminAppUsageStatistics> {
   Map<String, Map<String, int>> yearlyUsage = {};
   bool isLoading = true;
-  List<String> availableYears = [];
+  List<String> availableAcademicYears = [];
   int currentYearIndex = 0;
   final PageController _pageController = PageController();
+  String? currentAcademicYear;
 
   @override
   void initState() {
@@ -49,12 +50,10 @@ class _AdminStatisticsState extends State<AnnualAdminAppUsageStatistics> {
       DataSnapshot snapshot = await dbRef.get();
 
       if (snapshot.exists && snapshot.value is Map) {
-        // Attempt to cast the snapshot value to Map<String, dynamic>
         Map<String, dynamic> usersData;
         try {
           usersData = Map<String, dynamic>.from(snapshot.value as Map);
         } catch (e) {
-          // Fallback to JSON encoding/decoding if casting fails
           print('Casting failed, using JSON workaround: $e');
           final jsonString = jsonEncode(snapshot.value);
           usersData = Map<String, dynamic>.from(jsonDecode(jsonString));
@@ -63,14 +62,11 @@ class _AdminStatisticsState extends State<AnnualAdminAppUsageStatistics> {
         for (var userEntry in usersData.entries) {
           String userId = userEntry.key;
           Map<String, dynamic> userData =
-              Map<String, dynamic>.from(userEntry.value as Map);
+          Map<String, dynamic>.from(userEntry.value as Map);
 
           if (userData.containsKey('AppUsage')) {
             Map<String, dynamic> appUsage =
-                Map<String, dynamic>.from(userData['AppUsage'] as Map);
-
-            // Debugging: Print the app usage data
-            print('App usage data for user $userId: $appUsage');
+            Map<String, dynamic>.from(userData['AppUsage'] as Map);
 
             appUsage.forEach((key, value) {
               List<String> parts = key.split(' ');
@@ -80,28 +76,18 @@ class _AdminStatisticsState extends State<AnnualAdminAppUsageStatistics> {
 
               if (monthIndex != -1) {
                 if (value is String) {
-                  // Case 1: Direct time string
                   int totalSeconds = convertTimeToSeconds(value);
                   yearlyUsage[year] ??= {};
                   yearlyUsage[year]![months[monthIndex]] =
                       (yearlyUsage[year]![months[monthIndex]] ?? 0) +
                           totalSeconds;
                 } else if (value is Map<Object?, Object?>) {
-                  // Case 2: Map of date-time entries
                   value.forEach((dateKey, timeStr) {
-                    // Debugging: Print each dateKey and timeStr
-                    print(
-                        'Processing dateKey: $dateKey with timeStr: $timeStr');
-
                     try {
-                      // Validate dateKey format after casting to String
-                      String dateKeyStr = dateKey as String; // Cast to String
+                      String dateKeyStr = dateKey as String;
                       if (RegExp(r'^\d{2}-\d{2}-\d{4}$').hasMatch(dateKeyStr)) {
-                        // Explicitly cast timeStr to String
                         if (timeStr is String) {
-                          // Check if timeStr is indeed a String
-                          int totalSeconds = convertTimeToSeconds(
-                              timeStr); // Now this should work
+                          int totalSeconds = convertTimeToSeconds(timeStr);
                           yearlyUsage[year] ??= {};
                           yearlyUsage[year]![months[monthIndex]] =
                               (yearlyUsage[year]![months[monthIndex]] ?? 0) +
@@ -130,10 +116,49 @@ class _AdminStatisticsState extends State<AnnualAdminAppUsageStatistics> {
           }
         }
 
-        setState(() {
-          availableYears = yearlyUsage.keys.toList()..sort();
-          isLoading = false;
+        // Determine available academic years
+        Set<String> availableAcademicYearsSet = {};
+        yearlyUsage.forEach((year, monthsData) {
+          int yearInt = int.parse(year);
+          for (String month in monthsData.keys) {
+            int monthIndex = months.indexOf(month);
+            if (monthIndex >= 0) {
+              if (monthIndex >= 6) {
+                // July-Dec
+                availableAcademicYearsSet.add('$year-${yearInt + 1}');
+              } else {
+                // Jan-June
+                availableAcademicYearsSet.add('${yearInt - 1}-$year');
+              }
+            }
+          }
         });
+
+        // Get current academic year
+        DateTime now = DateTime.now();
+        int currentYear = now.year;
+        int currentMonth = now.month;
+
+        String currentAcademicYear;
+        if (currentMonth >= 7) {
+          // July to December
+          currentAcademicYear = '$currentYear-${currentYear + 1}';
+        } else {
+          // January to June
+          currentAcademicYear = '${currentYear - 1}-$currentYear';
+        }
+
+        // Update state
+        setState(() {
+          availableAcademicYears = availableAcademicYearsSet.toList()..sort();
+          currentYearIndex =
+              availableAcademicYears.indexOf(currentAcademicYear);
+          isLoading = false;
+          this.currentAcademicYear = currentAcademicYear;
+        });
+
+        print('Available Academic Years: $availableAcademicYears');
+        print('Current Academic Year: $currentAcademicYear');
       } else {
         print('No users found in the database');
         setState(() => isLoading = false);
@@ -220,12 +245,11 @@ class _AdminStatisticsState extends State<AnnualAdminAppUsageStatistics> {
   }
 
   List<BarChartGroupData> getEvenSemesterChartData(String year) {
-    return getSemesterChartData(year, false);
+    int nextyrhelp = int.parse(year);
+    int nextyear = nextyrhelp + 1;
+    return getSemesterChartData(nextyear.toString(), false);
   }
 
-  int getNewYear() {
-    return int.parse(availableYears[currentYearIndex]) + 1;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -233,74 +257,137 @@ class _AdminStatisticsState extends State<AnnualAdminAppUsageStatistics> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blueAccent, Colors.white],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blueAccent, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: availableAcademicYears.isNotEmpty
+              ? Column(
+            children: [
+              SizedBox(height: MediaQuery.of(context).size.height / 100),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Usage Statistics :  ',
+                      style: GoogleFonts.poppins(
+                        fontSize: MediaQuery.of(context).size.width < 360 ? 18 :
+                        MediaQuery.of(context).size.width < 600 ? 22 : 24,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 10.0,
+                            color: Colors.black.withOpacity(0.3),
+                            offset: const Offset(2.0, 2.0),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2.0),
+                      child: DropdownButton<String>(
+                        value: availableAcademicYears[currentYearIndex],
+                        underline: SizedBox(), // Removing the default underline
+                        icon: Icon(
+                          Icons.arrow_drop_down,
+                          color: Colors.white,
+                          size: 30, // Increase the icon size to make it a little bigger
+                        ),
+                        dropdownColor: Colors.white,
+                        menuWidth: MediaQuery.of(context).size.width / 2.72,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: Colors.black, // Default style for items
+                        ),
+                        items: availableAcademicYears.map((year) {
+                          return DropdownMenuItem<String>(
+                            value: year,
+                            child: Text(
+                              year,
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                color: Colors.black, // Normal style for each dropdown item
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            currentYearIndex = availableAcademicYears.indexOf(value!);
+                          });
+                        },
+                        selectedItemBuilder: (BuildContext context) {
+                          return availableAcademicYears.map<Widget>((String item) {
+                            return Center(
+                              child: Text(
+                                item,
+                                style: GoogleFonts.poppins(
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: Colors.white,
+                                  fontSize: MediaQuery.of(context).size.width < 360 ? 18 :
+                                  MediaQuery.of(context).size.width < 600 ? 22 : 24,
+                                  color: Colors.transparent, // Apply custom style for selected item
+                                  fontWeight: FontWeight.w600,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.white,
+                                      offset: Offset(0, -2),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList();
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: SingleChildScrollView(
-                child: availableYears.isNotEmpty
-                    ? Column(
-                        children: [
-                          const SizedBox(height: 24),
-                          Text(
-                            'Usage Statistics: ${availableYears[currentYearIndex]} - ${getNewYear().toString().substring(2)}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 26,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              shadows: [
-                                Shadow(
-                                  blurRadius: 10.0,
-                                  color: Colors.black.withOpacity(0.3),
-                                  offset: const Offset(2.0, 2.0),
-                                ),
-                              ],
-                            ),
-                          ),
-                          GraphContainer(
-                            year: availableYears[currentYearIndex],
-                            maxY: getMaxY(availableYears[currentYearIndex]),
-                            yInterval: calculateYAxisInterval(
-                                getMaxY(availableYears[currentYearIndex])),
-                            getChartData: getOddSemesterChartData,
-                            title: 'Odd Semester Usage',
-                          ),
-                          const SizedBox(height: 16),
-                          GraphContainer(
-                            year: availableYears[currentYearIndex],
-                            maxY: getMaxY(availableYears[currentYearIndex]),
-                            yInterval: calculateYAxisInterval(
-                                getMaxY(availableYears[currentYearIndex])),
-                            getChartData: getEvenSemesterChartData,
-                            title: 'Even Semester Usage',
-                          ),
-                          const SizedBox(height: 16),
-                          SmoothPageIndicator(
-                            controller: _pageController,
-                            count: availableYears.length,
-                            effect: ExpandingDotsEffect(
-                              dotHeight: 8.0,
-                              dotWidth: 8.0,
-                              activeDotColor: Colors.blueAccent,
-                              dotColor: Colors.white,
-                              expansionFactor: 4,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      )
-                    : const Center(
-                        child: Text(
-                          'No data available',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ),
+              GraphContainer(
+                year: availableAcademicYears[currentYearIndex]
+                    .split('-')[0],
+                maxY: getMaxY(availableAcademicYears[
+                currentYearIndex]
+                    .split('-')[0]),
+                yInterval: calculateYAxisInterval(getMaxY(
+                    availableAcademicYears[currentYearIndex]
+                        .split('-')[0])),
+                getChartData: getOddSemesterChartData,
+                title: 'Odd Semester Usage',
               ),
+              const SizedBox(height: 16),
+              GraphContainer(
+                year: availableAcademicYears[currentYearIndex]
+                    .split('-')[0],
+                maxY: getMaxY(availableAcademicYears[
+                currentYearIndex]
+                    .split('-')[0]),
+                yInterval: calculateYAxisInterval(getMaxY(
+                    availableAcademicYears[currentYearIndex]
+                        .split('-')[0])),
+                getChartData: getEvenSemesterChartData,
+                title: 'Even Semester Usage',
+              ),
+              const SizedBox(height: 16),
+            ],
+          )
+              : const Center(
+            child: Text(
+              'No data available',
+              style: TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.bold),
             ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -364,7 +451,6 @@ class GraphContainer extends StatelessWidget {
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         double totalSeconds = rod.toY * 60;
                         String formattedTime = formatSeconds(totalSeconds);
-
                         return BarTooltipItem(
                           formattedTime,
                           TextStyle(
@@ -427,7 +513,7 @@ class GraphContainer extends StatelessWidget {
                     getDrawingHorizontalLine: (value) {
                       return FlLine(
                         color: Colors.grey.withOpacity(0.3),
-                        strokeWidth: 1,
+                        strokeWidth: 2,
                       );
                     },
                   ),
@@ -436,11 +522,11 @@ class GraphContainer extends StatelessWidget {
                       border: Border(
                           left: BorderSide(
                             color: Colors.black,
-                            width: 1,
+                            width: 2,
                           ),
                           bottom: BorderSide(
                             color: Colors.black,
-                            width: 1,
+                            width: 2,
                           ))),
                   barGroups: getChartData(year),
                 ),

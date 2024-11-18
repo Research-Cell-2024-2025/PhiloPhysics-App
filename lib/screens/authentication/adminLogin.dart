@@ -126,7 +126,7 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
             Text(
               'Admin Login',
               style: GoogleFonts.merriweather(
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   fontStyle: FontStyle.italic,
                   color: color5),
@@ -186,7 +186,7 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
                 },
                 child: Text(
                   'Login',
-                  style: TextStyle(fontSize: 18, color: color1),
+                  style: GoogleFonts.poppins(fontSize: 18, color: color1,fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -226,7 +226,7 @@ class _AdminLoginFormState extends State<AdminLoginForm> {
                     SizedBox(width: 10),
                     Text(
                       'Sign in with Google',
-                      style: TextStyle(
+                      style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
