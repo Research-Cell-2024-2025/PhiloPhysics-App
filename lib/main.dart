@@ -1,8 +1,8 @@
+import 'package:ephysicsapp/screens/users/home.dart';
 import 'package:ephysicsapp/screens/users/splash_screen.dart';
 import 'package:ephysicsapp/services/authentication.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:in_app_update/in_app_update.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -32,13 +32,28 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late DateTime _startTime;
   bool _isLoggedIn = false;
   String? _userId;
+  bool _showSplashScreen = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _checkFirstLaunch();
     checkForUpdate();
     _checkLoggedInStatus();
+    _checkFirstLaunchOrResume();
+  }
+
+  Future<void> _checkFirstLaunch() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _showSplashScreen = prefs.getBool('hasOpenedApp') ?? true;
+    });
+
+    // If this is the first launch, set the flag to false
+    if (_showSplashScreen) {
+      await prefs.setBool('hasOpenedApp', false);
+    }
   }
 
   Future<void> _checkLoggedInStatus() async {
@@ -92,16 +107,19 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_isLoggedIn) {
-      if (state == AppLifecycleState.resumed) {
-        // App brought to foreground i.e., in use
-        print('Starting Time Recording');
-        _startTime = DateTime.now();
-      } else if (state == AppLifecycleState.paused ||
-          state == AppLifecycleState.inactive) {
-        print("App Not in Foreground");
-        _logAppUsageTime();
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (state == AppLifecycleState.detached ||
+        state == AppLifecycleState.inactive) {
+      // App is no longer visible or being terminated
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isAppInBackground', true);
+    } else if (state == AppLifecycleState.resumed) {
+      // App is resumed to the foreground
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      bool? isAppInBackground = prefs.getBool('isAppInBackground');
+      if (isAppInBackground != null && isAppInBackground) {
+        // App was in background, now resumed
+        await prefs.setBool('isAppInBackground', false);
       }
     }
   }
@@ -193,13 +211,23 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  Future<void> _checkFirstLaunchOrResume() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool? hasOpenedApp = prefs.getBool('hasOpenedApp');
+    bool? isAppInBackground = prefs.getBool('isAppInBackground');
+    setState(() {
+      _showSplashScreen = hasOpenedApp == null ||
+          (hasOpenedApp && (isAppInBackground == null || !isAppInBackground));
+    });
+
+    if (_showSplashScreen) {
+      // Mark the app as opened
+      await prefs.setBool('hasOpenedApp', true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Philo Physics',
@@ -207,7 +235,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
         primarySwatch: createMaterialColor(color5),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: SplashScreen(), // Initial screen of the app
+      home: _showSplashScreen ? SplashScreen() : MyHomePage(),
     );
   }
 }

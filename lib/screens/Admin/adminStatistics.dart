@@ -1,13 +1,9 @@
 import 'dart:collection';
-import 'package:auto_size_text/auto_size_text.dart';
-import 'package:bubble_tab_indicator/bubble_tab_indicator.dart';
-import 'package:ephysicsapp/globals/colors.dart';
 import 'package:ephysicsapp/screens/Admin/adminUserUsageStatistics.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
 
 class AdminStatistics extends StatefulWidget {
   const AdminStatistics({super.key});
@@ -280,6 +276,41 @@ class _AdminStatisticsState extends State<AdminStatistics>
     mins = totalMinutes.toInt() % 60; // Get the remainder for minutes
   }
 
+  Future<Map<String, int>> fetchTopViewedPDFs() async {
+    final databaseRef = FirebaseDatabase.instance.ref();
+    final snapshot = await databaseRef.get();
+
+    if (snapshot.exists) {
+      Map<String, int> pdfViews = {};
+
+      // Iterate over each user's data
+      snapshot.children.forEach((userSnapshot) {
+        final documents = userSnapshot.child("documents");
+
+        // Iterate over each document for the user
+        documents.children.forEach((docSnapshot) {
+          final docId = docSnapshot.key;
+          final viewCount = docSnapshot.child("thisNotesViewed").value as int;
+
+          if (pdfViews.containsKey(docId)) {
+            pdfViews[docId!] = pdfViews[docId]! + viewCount;
+          } else {
+            pdfViews[docId!] = viewCount;
+          }
+        });
+      });
+
+      // Sort PDFs by view count in descending order
+      final sortedEntries = pdfViews.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+
+      // Return the sorted map
+      return Map.fromEntries(sortedEntries);
+    } else {
+      return {};
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -338,6 +369,9 @@ class _AdminStatisticsState extends State<AdminStatistics>
                     SizedBox(height: MediaQuery.of(context).size.height / 30),
                     // Top Users Container
                     _buildTopUsersContainer(),
+                    SizedBox(height: MediaQuery.of(context).size.height / 30),
+                    // Top Pdfs Container
+                    _buildTopPdfsContainer(),
                     SizedBox(height: MediaQuery.of(context).size.height / 25),
                     // Usage Stats Box
                     _buildUsageStatsBox(
@@ -516,6 +550,107 @@ class _AdminStatisticsState extends State<AdminStatistics>
     );
   }
 
+  Future<List<Map<String, dynamic>>> fetchTopDocuments() async {
+    final databaseRef = FirebaseDatabase.instance.ref(); // Root reference
+    final snapshot = await databaseRef.get();
+
+    if (!snapshot.exists) {
+      throw Exception("No data found in Firebase");
+    }
+
+    Map<String, Map<String, dynamic>> documentData = {};
+
+    for (var rootId in ['1', '2', '3']) {
+      final rootSnapshot = snapshot.child(rootId);
+
+      for (var moduleSnapshot in rootSnapshot.children) {
+        final documentsSnapshot = moduleSnapshot.child('documents');
+
+        if (documentsSnapshot.exists) {
+          for (var docSnapshot in documentsSnapshot.children) {
+            final docId = docSnapshot.key;
+            final viewCount = int.tryParse(
+                    docSnapshot.child('thisNotesViewed').value?.toString() ??
+                        '0') ??
+                0;
+            final docName =
+                docSnapshot.child('docName').value?.toString() ?? 'Unknown';
+
+            if (docId != null) {
+              if (documentData.containsKey(docId)) {
+                documentData[docId]!['views'] =
+                    (documentData[docId]!['views'] as int) + viewCount;
+              } else {
+                documentData[docId] = {
+                  'docName': docName,
+                  'views': viewCount,
+                };
+              }
+            }
+          }
+        }
+      }
+    }
+
+    List<Map<String, dynamic>> sortedDocuments = documentData.entries
+        .map((entry) => {
+              'docId': entry.key,
+              'docName': entry.value['docName'],
+              'views': entry.value['views'],
+            })
+        .toList()
+      ..sort((a, b) => (b['views'] as int).compareTo(a['views'] as int));
+
+    return sortedDocuments.take(3).toList();
+  }
+
+  Widget _buildTopPdfsList(List<Map<String, dynamic>> pdfs) {
+    if (pdfs.isEmpty) {
+      return Center(child: Text('No data available.'));
+    }
+
+    return Column(
+      children: List.generate(3, (index) {
+        if (index >= pdfs.length) return SizedBox.shrink(); // Avoid overflow
+
+        final pdf = pdfs[index];
+        final medalAsset = _getMedalAsset(index);
+
+        return Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          elevation: 4,
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+            leading: Text(
+              medalAsset,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 30,
+                color: medalAsset == '1'
+                    ? Color(0xFFFFD700) // Gold
+                    : medalAsset == '2'
+                        ? Color(0xFFC0C0C0) // Silver
+                        : Color(0xFFCD7F32), // Bronze
+              ),
+            ),
+            title: Text(
+              pdf['docName'] ?? 'Unknown Document',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              'Views: ${pdf['views']}',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
   Widget _buildTopUsersContainer() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -573,6 +708,54 @@ class _AdminStatisticsState extends State<AdminStatistics>
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopPdfsContainer() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey.shade200,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Top PDFs',
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: fetchTopDocuments(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text("Error: ${snapshot.error}"));
+                }
+
+                final topPDFs = snapshot.data ?? [];
+                return topPDFs.isNotEmpty
+                    ? _buildTopPdfsList(topPDFs)
+                    : Center(child: Text("No data available."));
+              },
             ),
           ],
         ),
